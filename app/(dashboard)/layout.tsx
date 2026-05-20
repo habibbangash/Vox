@@ -5,10 +5,11 @@ import { getWorkspaceMembership } from '@/lib/supabase/dal'
 import { Button } from '@/components/ui/button'
 
 const navItems = [
-  { href: '/dashboard', label: 'Home', icon: '⬡' },
-  { href: '/sources', label: 'Sources', icon: '⟡' },
+  { href: '/dashboard',    label: 'Home',         icon: '⬡' },
+  { href: '/sources',      label: 'Sources',      icon: '⟡' },
   { href: '/intelligence', label: 'Intelligence', icon: '◈' },
-  { href: '/content', label: 'Content', icon: '⊞' },
+  { href: '/content',      label: 'Content',      icon: '⊞' },
+  { href: '/settings',     label: 'Settings',     icon: '⚙' },
 ]
 
 export default async function DashboardLayout({
