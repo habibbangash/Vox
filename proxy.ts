@@ -47,7 +47,7 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  const protectedPrefixes = ['/dashboard', '/sources', '/intelligence', '/content', '/onboarding']
+  const protectedPrefixes = ['/dashboard', '/sources', '/intelligence', '/content', '/onboarding', '/settings']
   const isProtected = protectedPrefixes.some((p) => pathname.startsWith(p))
   const isAuthPage = pathname === '/login' || pathname === '/signup'
 
