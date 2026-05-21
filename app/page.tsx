@@ -1,6 +1,10 @@
 import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { LandingPage } from '@/app/_components/landing-page'
 
-// Root redirects to dashboard; proxy.ts sends unauthenticated users to /login
-export default function RootPage() {
-  redirect('/dashboard')
+export default async function RootPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) redirect('/dashboard')
+  return <LandingPage />
 }
