@@ -38,72 +38,104 @@ function useInView(threshold = 0.15) {
 
 // ─── SVG diagrams ─────────────────────────────────────────────────────────────
 
+const FLOAT_ANIMS = ['vox-float-a', 'vox-float-b', 'vox-float-c', 'vox-float-d'] as const
+const FLOAT_DURS  = ['3.2s', '2.9s', '3.5s', '3.1s'] as const
+const FLOAT_DELAYS = ['0s', '0.7s', '1.4s', '0.35s'] as const
+
 function IngestionDiagram() {
   const sources = [
-    { x: 52,  y: 48,  label: 'KRISP',   dot: '#FF5757' },
-    { x: 195, y: 42,  label: 'SLACK',   dot: '#6B49A9' },
-    { x: 44,  y: 148, label: 'GMAIL',   dot: '#EA4335' },
-    { x: 198, y: 150, label: 'GRANOLA', dot: '#00A67E' },
+    { x: 54,  y: 50,  label: 'KRISP',   dot: '#FF5757' },
+    { x: 198, y: 44,  label: 'SLACK',   dot: '#6B49A9' },
+    { x: 46,  y: 152, label: 'GMAIL',   dot: '#EA4335' },
+    { x: 200, y: 154, label: 'GRANOLA', dot: '#00A67E' },
   ]
-  const cx = 124, cy = 106
+  const cx = 126, cy = 106
   return (
-    <svg viewBox="0 0 260 200" className="w-full h-full" fill="none">
+    <svg viewBox="0 0 268 210" className="w-full h-full" fill="none">
+      {/* Flowing dashed lines */}
       {sources.map((s, i) => (
         <line key={i} x1={s.x} y1={s.y} x2={cx} y2={cy}
-          stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
+          stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" strokeDasharray="5 5"
+          style={{ animation: `vox-dash ${1.1 + i * 0.15}s linear infinite`, animationDelay: FLOAT_DELAYS[i] }}
+        />
       ))}
-      {sources.map((s) => {
-        const w = s.label.length * 7.2 + 28
+      {/* Floating source nodes */}
+      {sources.map((s, i) => {
+        const w = s.label.length * 8 + 36
         return (
-          <g key={s.label}>
-            <rect x={s.x - w / 2} y={s.y - 13} width={w} height={25} rx="4"
-              fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.22)" strokeWidth="1" />
-            <circle cx={s.x - w / 2 + 11} cy={s.y} r="3.5" fill={s.dot} />
-            <text x={s.x - w / 2 + 21} y={s.y + 4.5} fontSize="8.5" fill="rgba(255,255,255,0.65)"
-              fontFamily="monospace" letterSpacing="0.8">{s.label}</text>
+          <g key={s.label} style={{
+            transformBox: 'fill-box', transformOrigin: 'center',
+            animation: `${FLOAT_ANIMS[i]} ${FLOAT_DURS[i]} ease-in-out infinite`,
+            animationDelay: FLOAT_DELAYS[i],
+          }}>
+            <rect x={s.x - w / 2} y={s.y - 16} width={w} height={32} rx="7"
+              fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.45)" strokeWidth="1.5" />
+            <circle cx={s.x - w / 2 + 14} cy={s.y} r="5" fill={s.dot} />
+            <text x={s.x - w / 2 + 27} y={s.y + 5.5} fontSize="10.5" fill="rgba(255,255,255,0.88)"
+              fontFamily="monospace" letterSpacing="0.9">{s.label}</text>
           </g>
         )
       })}
-      {/* Vox node */}
-      <circle cx={cx} cy={cy} r="22" fill="rgba(59,130,246,0.12)"
-        stroke="rgba(59,130,246,0.55)" strokeWidth="1.5" />
-      <circle cx={cx} cy={cy} r="6" fill="#3B82F6" />
-      <text x={cx} y={cy + 38} fontSize="8" fill="rgba(255,255,255,0.4)"
-        textAnchor="middle" fontFamily="monospace" letterSpacing="1.5">VOX</text>
+      {/* Vox — outer pulse ring */}
+      <circle cx={cx} cy={cy} r="28" fill="none" stroke="rgba(59,130,246,0.5)" strokeWidth="1.5"
+        style={{ transformBox: 'fill-box', transformOrigin: 'center', animation: 'vox-pulse-ring 2.4s ease-out infinite' }} />
+      {/* Vox — inner ring */}
+      <circle cx={cx} cy={cy} r="24" fill="rgba(59,130,246,0.18)" stroke="rgba(59,130,246,0.75)" strokeWidth="2" />
+      {/* Vox — core dot */}
+      <circle cx={cx} cy={cy} r="8" fill="#3B82F6"
+        style={{ transformBox: 'fill-box', transformOrigin: 'center', animation: 'vox-pulse-dot 2.4s ease-in-out infinite' }} />
+      <text x={cx} y={cy + 44} fontSize="9.5" fill="rgba(255,255,255,0.6)"
+        textAnchor="middle" fontFamily="monospace" letterSpacing="1.6">VOX</text>
     </svg>
   )
 }
 
 function SignalDiagram() {
-  // Nodes: topics surfaced from conversations
-  const nodes = [
-    { x: 68,  y: 62,  r: 10, color: '#3B82F6',  label: 'PRICING',   lx: 68,  ly: 46  },
-    { x: 188, y: 55,  r: 7,  color: '#F59E0B',  label: 'TIMELINE',  lx: 188, ly: 39  },
-    { x: 55,  y: 148, r: 7,  color: '#10B981',  label: 'OBJECTION', lx: 55,  ly: 132 },
-    { x: 185, y: 150, r: 9,  color: '#EF4444',  label: 'BLOCKER',   lx: 185, ly: 134 },
-    { x: 124, y: 105, r: 5,  color: 'rgba(255,255,255,0.35)', label: '', lx: 0, ly: 0 },
-    { x: 144, y: 78,  r: 3.5,color: 'rgba(255,255,255,0.2)',  label: '', lx: 0, ly: 0 },
-    { x: 100, y: 130, r: 3.5,color: 'rgba(255,255,255,0.2)',  label: '', lx: 0, ly: 0 },
+  const topics = [
+    { x: 70,  y: 64,  r: 12, color: '#3B82F6', label: 'PRICING',   ly: 45,  anim: 'vox-float-a', dur: '3.0s', delay: '0s'    },
+    { x: 192, y: 56,  r: 9,  color: '#F59E0B', label: 'TIMELINE',  ly: 37,  anim: 'vox-float-b', dur: '2.8s', delay: '0.6s'  },
+    { x: 58,  y: 152, r: 9,  color: '#10B981', label: 'OBJECTION', ly: 133, anim: 'vox-float-c', dur: '3.4s', delay: '1.2s'  },
+    { x: 188, y: 154, r: 11, color: '#EF4444', label: 'BLOCKER',   ly: 135, anim: 'vox-float-d', dur: '3.1s', delay: '0.3s'  },
   ]
-  const edges = [[0,4],[1,4],[2,4],[3,4],[4,5],[4,6],[0,1],[2,3]]
+  const center = { x: 126, y: 107 }
+  const connectors = [
+    { x: 146, y: 80  },
+    { x: 102, y: 132 },
+  ]
+  const edges: [number, number][] = [[0,1],[2,3]]
   return (
-    <svg viewBox="0 0 260 200" className="w-full h-full" fill="none">
-      {edges.map(([a, b], i) => (
-        <line key={i}
-          x1={nodes[a].x} y1={nodes[a].y}
-          x2={nodes[b].x} y2={nodes[b].y}
-          stroke="rgba(255,255,255,0.15)" strokeWidth="1"
-          strokeDasharray={i > 3 ? '3 3' : undefined} />
+    <svg viewBox="0 0 268 210" className="w-full h-full" fill="none">
+      {/* Topic → center lines (dashed, flowing) */}
+      {topics.map((t, i) => (
+        <line key={`tc-${i}`} x1={t.x} y1={t.y} x2={center.x} y2={center.y}
+          stroke="rgba(255,255,255,0.28)" strokeWidth="1.3" strokeDasharray="5 5"
+          style={{ animation: `vox-dash 1.3s linear infinite`, animationDelay: t.delay }} />
       ))}
-      {nodes.map((n, i) => (
-        <g key={i}>
-          <circle cx={n.x} cy={n.y} r={n.r} fill={n.color} />
-          {n.label && (
-            <text x={n.lx} y={n.ly} fontSize="8" fill="rgba(255,255,255,0.4)"
-              textAnchor="middle" fontFamily="monospace" letterSpacing="0.8">
-              {n.label}
-            </text>
-          )}
+      {/* Topic ↔ topic cross lines */}
+      {edges.map(([a, b], i) => (
+        <line key={`tt-${i}`}
+          x1={topics[a].x} y1={topics[a].y} x2={topics[b].x} y2={topics[b].y}
+          stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeDasharray="3 4" />
+      ))}
+      {/* Center node */}
+      <circle cx={center.x} cy={center.y} r="8" fill="rgba(255,255,255,0.35)" />
+      {connectors.map((c, i) => (
+        <circle key={i} cx={c.x} cy={c.y} r="4.5" fill="rgba(255,255,255,0.2)" />
+      ))}
+      {/* Floating topic nodes */}
+      {topics.map((t) => (
+        <g key={t.label} style={{
+          transformBox: 'fill-box', transformOrigin: 'center',
+          animation: `${t.anim} ${t.dur} ease-in-out infinite`,
+          animationDelay: t.delay,
+        }}>
+          {/* Outer glow ring */}
+          <circle cx={t.x} cy={t.y} r={t.r + 5} fill={`${t.color}18`} stroke={`${t.color}40`} strokeWidth="1" />
+          <circle cx={t.x} cy={t.y} r={t.r} fill={t.color} />
+          <text x={t.x} y={t.ly} fontSize="9" fill="rgba(255,255,255,0.65)"
+            textAnchor="middle" fontFamily="monospace" letterSpacing="0.8">
+            {t.label}
+          </text>
         </g>
       ))}
     </svg>
@@ -112,34 +144,42 @@ function SignalDiagram() {
 
 function OutputDiagram() {
   return (
-    <svg viewBox="0 0 260 200" className="w-full h-full" fill="none">
-      {/* LinkedIn post card */}
-      <rect x="28" y="38" width="90" height="72" rx="6"
-        fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.22)" strokeWidth="1" />
-      <line x1="42" y1="58" x2="104" y2="58" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
-      <line x1="42" y1="70" x2="98" y2="70" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-      <line x1="42" y1="80" x2="90" y2="80" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-      <line x1="42" y1="90" x2="95" y2="90" stroke="rgba(255,255,255,0.1)"  strokeWidth="1" />
-      <text x="73" y="124" fontSize="8" fill="rgba(255,255,255,0.4)"
-        textAnchor="middle" fontFamily="monospace" letterSpacing="1">LINKEDIN</text>
-      {/* Email card */}
-      <rect x="142" y="52" width="90" height="66" rx="6"
-        fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.22)" strokeWidth="1" />
-      <line x1="156" y1="70" x2="218" y2="70" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
-      <line x1="156" y1="82" x2="212" y2="82" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-      <line x1="156" y1="92" x2="208" y2="92" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
-      <line x1="156" y1="102"x2="216" y2="102"stroke="rgba(255,255,255,0.1)"  strokeWidth="1" />
-      <text x="187" y="132" fontSize="8" fill="rgba(255,255,255,0.4)"
-        textAnchor="middle" fontFamily="monospace" letterSpacing="1">EMAIL</text>
-      {/* Central output node */}
-      <circle cx="130" cy="155" r="16" fill="rgba(59,130,246,0.12)"
-        stroke="rgba(59,130,246,0.55)" strokeWidth="1.5" />
-      <circle cx="130" cy="155" r="5.5" fill="#3B82F6" />
-      {/* Arrows from cards to node */}
-      <line x1="100" y1="110" x2="122" y2="141"
-        stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
-      <line x1="160" y1="118" x2="137" y2="141"
-        stroke="rgba(255,255,255,0.18)" strokeWidth="1" />
+    <svg viewBox="0 0 268 210" className="w-full h-full" fill="none">
+      {/* LinkedIn post card — floats */}
+      <g style={{ transformBox: 'fill-box', transformOrigin: 'center', animation: 'vox-float-a 3.2s ease-in-out infinite' }}>
+        <rect x="22" y="34" width="98" height="76" rx="8"
+          fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.42)" strokeWidth="1.5" />
+        <line x1="36" y1="55" x2="106" y2="55" stroke="rgba(255,255,255,0.45)" strokeWidth="2" />
+        <line x1="36" y1="68" x2="100" y2="68" stroke="rgba(255,255,255,0.25)" strokeWidth="1.2" />
+        <line x1="36" y1="79" x2="92"  y2="79" stroke="rgba(255,255,255,0.25)" strokeWidth="1.2" />
+        <line x1="36" y1="90" x2="97"  y2="90" stroke="rgba(255,255,255,0.18)" strokeWidth="1.2" />
+        <text x="71" y="124" fontSize="9.5" fill="rgba(255,255,255,0.6)"
+          textAnchor="middle" fontFamily="monospace" letterSpacing="1.1">LINKEDIN</text>
+      </g>
+      {/* Email card — floats with offset */}
+      <g style={{ transformBox: 'fill-box', transformOrigin: 'center', animation: 'vox-float-b 2.9s ease-in-out infinite', animationDelay: '0.6s' }}>
+        <rect x="148" y="48" width="98" height="70" rx="8"
+          fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.42)" strokeWidth="1.5" />
+        <line x1="162" y1="67" x2="232" y2="67" stroke="rgba(255,255,255,0.45)" strokeWidth="2" />
+        <line x1="162" y1="80" x2="226" y2="80" stroke="rgba(255,255,255,0.25)" strokeWidth="1.2" />
+        <line x1="162" y1="91" x2="220" y2="91" stroke="rgba(255,255,255,0.25)" strokeWidth="1.2" />
+        <line x1="162" y1="102"x2="228" y2="102" stroke="rgba(255,255,255,0.18)" strokeWidth="1.2" />
+        <text x="197" y="134" fontSize="9.5" fill="rgba(255,255,255,0.6)"
+          textAnchor="middle" fontFamily="monospace" letterSpacing="1.1">EMAIL</text>
+      </g>
+      {/* Flowing lines from cards to output node */}
+      <line x1="96"  y1="110" x2="122" y2="146"
+        stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" strokeDasharray="5 5"
+        style={{ animation: 'vox-dash 1.1s linear infinite' }} />
+      <line x1="172" y1="118" x2="140" y2="146"
+        stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" strokeDasharray="5 5"
+        style={{ animation: 'vox-dash 1.1s linear infinite', animationDelay: '0.55s' }} />
+      {/* Output node — pulse */}
+      <circle cx="131" cy="160" r="26" fill="none" stroke="rgba(59,130,246,0.4)" strokeWidth="1.5"
+        style={{ transformBox: 'fill-box', transformOrigin: 'center', animation: 'vox-pulse-ring 2.4s ease-out infinite' }} />
+      <circle cx="131" cy="160" r="20" fill="rgba(59,130,246,0.18)" stroke="rgba(59,130,246,0.75)" strokeWidth="2" />
+      <circle cx="131" cy="160" r="7" fill="#3B82F6"
+        style={{ transformBox: 'fill-box', transformOrigin: 'center', animation: 'vox-pulse-dot 2.4s ease-in-out infinite' }} />
     </svg>
   )
 }
@@ -186,8 +226,8 @@ export function LandingPage() {
 
         {/* Fade video into background colour at the bottom */}
         <div
-          className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none"
-          style={{ zIndex: 1, background: `linear-gradient(to bottom, transparent, ${BG})` }}
+          className="absolute bottom-0 left-0 right-0 pointer-events-none"
+          style={{ zIndex: 1, height: '340px', background: `linear-gradient(to bottom, transparent 0%, ${BG} 70%)` }}
         />
 
         {/* Content */}
@@ -241,19 +281,37 @@ export function LandingPage() {
             </Link>
           </section>
 
-          {/* Connects to bar */}
-          <footer className="liquid-glass border-t border-white/10 px-8 py-4">
-            <div className="max-w-7xl mx-auto flex flex-wrap items-center gap-x-7 gap-y-3">
-              <span className="text-sm shrink-0 pr-6 border-r border-white/20" style={{ color: MUTED }}>
-                Connects to
-              </span>
+          {/* Connects to — floats in the gradient fade zone */}
+          <footer className="pb-12 pt-16 flex flex-col items-center gap-8">
+            <span
+              className="text-sm tracking-[0.28em] uppercase font-medium"
+              style={{ color: 'rgba(255,255,255,0.6)' }}
+            >
+              Connects to
+            </span>
+            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
               {INTEGRATIONS.map(({ name, domain }) => (
-                <div key={name} className="flex items-center gap-2">
+                <div key={name} className="flex flex-col items-center gap-2.5">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={`https://logo.clearbit.com/${domain}`} alt={name} width={18} height={18}
-                    className="rounded-sm opacity-80"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-                  <span className="text-sm" style={{ color: MUTED }}>{name}</span>
+                  <img
+                    src={`https://logo.clearbit.com/${domain}`}
+                    alt={name}
+                    width={44}
+                    height={44}
+                    className="rounded-xl"
+                    style={{ opacity: 0.75 }}
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement
+                      img.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
+                      img.onerror = () => { img.style.display = 'none' }
+                    }}
+                  />
+                  <span
+                    className="text-xs tracking-[0.12em] uppercase font-medium"
+                    style={{ color: 'rgba(255,255,255,0.5)' }}
+                  >
+                    {name}
+                  </span>
                 </div>
               ))}
             </div>
@@ -287,23 +345,28 @@ export function LandingPage() {
 
           {/* Card grid */}
           <div
-            className={`rounded-xl border border-white/10 overflow-hidden grid grid-cols-1 sm:grid-cols-3 transition-all duration-700 delay-200 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+            className={`rounded-2xl overflow-hidden grid grid-cols-1 sm:grid-cols-3 transition-all duration-700 delay-200 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+            style={{ border: '2px solid rgba(255,255,255,0.28)' }}
           >
             {CARDS.map(({ label, description, Diagram }, i) => (
               <div
                 key={label}
-                className={i > 0 ? 'border-t sm:border-t-0 sm:border-l border-white/10' : ''}
+                className={i > 0 ? 'border-t sm:border-t-0 sm:border-l' : ''}
+                style={i > 0 ? { borderColor: 'rgba(255,255,255,0.28)' } : undefined}
               >
                 {/* Illustration */}
-                <div className="h-52 flex items-center justify-center px-6 py-4 border-b border-white/10">
+                <div
+                  className="h-60 flex items-center justify-center px-6 py-6"
+                  style={{ borderBottom: '2px solid rgba(255,255,255,0.28)' }}
+                >
                   <Diagram />
                 </div>
                 {/* Text */}
-                <div className="px-6 py-5 space-y-2.5">
-                  <p className="text-xs tracking-[0.1em] font-medium" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                <div className="px-7 py-7 space-y-3">
+                  <p className="text-sm tracking-[0.12em] font-semibold uppercase" style={{ color: 'rgba(255,255,255,0.6)' }}>
                     {label}
                   </p>
-                  <p className="text-sm leading-relaxed" style={{ color: MUTED }}>
+                  <p className="text-[15px] leading-relaxed" style={{ color: MUTED }}>
                     {description}
                   </p>
                 </div>

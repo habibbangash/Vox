@@ -171,3 +171,25 @@
 .animate-fade-rise          { animation: fade-rise 0.8s ease-out 0s   both; }
 .animate-fade-rise-delay    { animation: fade-rise 0.8s ease-out 0.2s both; }
 .animate-fade-rise-delay-2  { animation: fade-rise 0.8s ease-out 0.4s both; }
+
+/* ─── SVG diagram animations ───────────────────────────────────────────────── */
+@keyframes vox-float-a { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-7px)} }
+@keyframes vox-float-b { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-5px)} }
+@keyframes vox-float-c { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-8px)} }
+@keyframes vox-float-d { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-6px)} }
+@keyframes vox-pulse-ring {
+  0%,100% { transform: scale(1);   opacity: 0.6; }
+  50%     { transform: scale(1.3); opacity: 0; }
+}
+@keyframes vox-pulse-dot {
+  0%,100% { transform: scale(1);    }
+  50%     { transform: scale(1.18); }
+}
+@keyframes vox-dash {
+  from { stroke-dashoffset: 14; }
+  to   { stroke-dashoffset: 0;  }
+}
+@keyframes vox-bob {
+  0%,100% { transform: translateY(0px);  }
+  50%     { transform: translateY(-4px); }
+}
