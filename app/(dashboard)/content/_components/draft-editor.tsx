@@ -30,6 +30,7 @@ const SOURCE_STYLE: Record<string, { label: string; style: string }> = {
   gmail:   { label: 'Gmail',    style: 'bg-red-500/10 text-red-600' },
   hubspot: { label: 'HubSpot',  style: 'bg-orange-500/10 text-orange-600' },
   manual:  { label: 'Manual',   style: 'bg-muted text-muted-foreground' },
+  notion:  { label: 'Notion',   style: 'bg-gray-500/10 text-gray-600' },
 }
 
 function SourceBadge({ type }: { type: string }) {

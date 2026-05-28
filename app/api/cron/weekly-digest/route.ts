@@ -20,6 +20,7 @@ const SOURCE_TYPE_LABEL: Record<string, string> = {
   gmail:   'Emails',
   hubspot: 'HubSpot records',
   manual:  'Manual imports',
+  notion:  'Notion pages',
 }
 
 function buildDigestHtml(opts: {
