@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { updateDraft, deleteDraft, addDraftSource, removeDraftSource, getDraftSources, generateDraftBody, type ContentDraft } from '@/app/actions/content'
 import { searchDocuments, type DocumentResult } from '@/app/actions/intelligence'
-import { publishDraftToLinkedIn } from '@/app/actions/publish'
+import { publishDraftToLinkedIn, publishDraftAsEmail } from '@/app/actions/publish'
 
 const STATUS_OPTIONS = ['brief', 'draft', 'review', 'published'] as const
 const STATUS_STYLE: Record<string, string> = {
@@ -55,13 +55,14 @@ interface LinkedSource {
 }
 
 interface DraftEditorProps {
-  draft:             ContentDraft
-  initialSources:    LinkedSource[]
-  defaultExpanded?:  boolean
+  draft:              ContentDraft
+  initialSources:     LinkedSource[]
+  defaultExpanded?:   boolean
   linkedInConnected?: boolean
+  emailConfigured?:   boolean
 }
 
-export function DraftEditor({ draft, initialSources, defaultExpanded = false, linkedInConnected = false }: DraftEditorProps) {
+export function DraftEditor({ draft, initialSources, defaultExpanded = false, linkedInConnected = false, emailConfigured = false }: DraftEditorProps) {
   const [expanded, setExpanded] = useState(defaultExpanded)
   const [title,    setTitle]    = useState(draft.title)
   const [body,     setBody]     = useState(draft.body ?? '')
@@ -82,6 +83,12 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false, li
   const [publishError,    setPublishError]    = useState<string | null>(null)
   const [publishSuccess,  setPublishSuccess]  = useState(false)
   const [postUrl,         setPostUrl]         = useState<string | null>(draft.published_url ?? null)
+
+  const [toEmail,         setToEmail]         = useState('')
+  const [showEmailInput,  setShowEmailInput]  = useState(false)
+  const [isSendingEmail,  setIsSendingEmail]  = useState(false)
+  const [emailError,      setEmailError]      = useState<string | null>(null)
+  const [emailSuccess,    setEmailSuccess]    = useState(false)
 
   // Load persisted sources the first time the editor is expanded
   useEffect(() => {
@@ -150,6 +157,22 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false, li
       setPublishSuccess(true)
       setStatus('published')
       if (result.postUrl) setPostUrl(result.postUrl)
+    }
+  }
+
+  async function handleSendEmail() {
+    if (!toEmail.trim()) return
+    setIsSendingEmail(true)
+    setEmailError(null)
+    const result = await publishDraftAsEmail(draft.id, toEmail.trim())
+    setIsSendingEmail(false)
+    if (result.error) {
+      setEmailError(result.error)
+    } else {
+      setEmailSuccess(true)
+      setStatus('published')
+      setShowEmailInput(false)
+      setToEmail('')
     }
   }
 
@@ -406,7 +429,7 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false, li
             />
           </div>
 
-          {/* Publish errors */}
+          {/* Publish errors / success */}
           {publishError && (
             <p className="text-xs text-destructive rounded bg-destructive/10 px-2 py-1">{publishError}</p>
           )}
@@ -425,6 +448,38 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false, li
                 </a>
               )}
             </p>
+          )}
+          {emailError && (
+            <p className="text-xs text-destructive rounded bg-destructive/10 px-2 py-1">{emailError}</p>
+          )}
+          {emailSuccess && (
+            <p className="text-xs text-green-600 rounded bg-green-500/10 px-2 py-1 flex items-center gap-1.5">
+              <Check className="size-3 shrink-0" />
+              Email sent successfully.
+            </p>
+          )}
+          {showEmailInput && draft.format === 'email_sequence' && (
+            <div className="flex gap-2">
+              <Input
+                type="email"
+                value={toEmail}
+                onChange={(e) => setToEmail(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendEmail()}
+                placeholder="recipient@example.com"
+                className="h-9 text-sm flex-1"
+                autoFocus
+              />
+              <Button
+                size="sm"
+                onClick={handleSendEmail}
+                disabled={isSendingEmail || !toEmail.trim()}
+              >
+                {isSendingEmail ? <Loader2 className="size-3.5 animate-spin" /> : 'Send'}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setShowEmailInput(false)}>
+                <X className="size-3.5" />
+              </Button>
+            </div>
           )}
 
           {/* Save / delete */}
@@ -462,6 +517,18 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false, li
                     ? <Loader2 className="size-3.5 animate-spin mr-1" />
                     : <Send className="size-3.5 mr-1" />}
                   {linkedInConnected ? 'Publish' : 'Connect LinkedIn'}
+                </Button>
+              )}
+              {draft.format === 'email_sequence' && body && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => emailConfigured ? setShowEmailInput((v) => !v) : window.location.href = '/settings'}
+                  disabled={isSendingEmail}
+                  title={!emailConfigured ? 'Configure Resend in Settings first' : 'Send as email'}
+                >
+                  <Send className="size-3.5 mr-1" />
+                  {emailConfigured ? 'Send Email' : 'Configure Email'}
                 </Button>
               )}
               <Button size="sm" onClick={save} disabled={isSaving} variant="outline">

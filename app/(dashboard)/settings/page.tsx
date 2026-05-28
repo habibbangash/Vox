@@ -3,6 +3,7 @@ import { getWorkspaceSettings } from '@/app/actions/workspace'
 import { getTeamContext } from '@/app/actions/team'
 import { AuthorProfileForm } from './_components/author-profile-form'
 import { ApiKeyForm } from './_components/api-key-form'
+import { ResendForm } from './_components/resend-form'
 import { TeamMembers } from './_components/team-members'
 
 export default async function SettingsPage() {
@@ -42,6 +43,22 @@ export default async function SettingsPage() {
             </p>
           </div>
           <ApiKeyForm hasKey={!!wsSettings.anthropic_api_key} />
+        </section>
+
+        <div className="border-t" />
+
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-base font-medium">Email publishing / Resend</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Send email drafts directly from the Content editor using Resend.
+            </p>
+          </div>
+          <ResendForm
+            configured={!!wsSettings.resend_api_key}
+            fromName={wsSettings.resend_from_name}
+            fromEmail={wsSettings.resend_from_email}
+          />
         </section>
 
         <div className="border-t" />

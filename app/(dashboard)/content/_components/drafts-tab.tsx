@@ -12,9 +12,10 @@ interface DraftsTabProps {
   onPendingFormatConsumed?:  () => void
   highlightDraftId?:         string | null
   linkedInConnected?:        boolean
+  emailConfigured?:          boolean
 }
 
-export function DraftsTab({ drafts, pendingFormat, onPendingFormatConsumed, highlightDraftId, linkedInConnected = false }: DraftsTabProps) {
+export function DraftsTab({ drafts, pendingFormat, onPendingFormatConsumed, highlightDraftId, linkedInConnected = false, emailConfigured = false }: DraftsTabProps) {
   const [showNew,   setShowNew]   = useState(false)
   const [newFormat, setNewFormat] = useState('linkedin_post')
 
@@ -64,6 +65,7 @@ export function DraftsTab({ drafts, pendingFormat, onPendingFormatConsumed, high
               initialSources={[]}
               defaultExpanded={draft.id === highlightDraftId}
               linkedInConnected={linkedInConnected}
+              emailConfigured={emailConfigured}
             />
           ))}
         </div>

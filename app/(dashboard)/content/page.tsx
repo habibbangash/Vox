@@ -1,12 +1,13 @@
 import { getDrafts, getSignals } from '@/app/actions/content'
-import { getLinkedInConnection } from '@/app/actions/publish'
+import { getLinkedInConnection, getEmailConfig } from '@/app/actions/publish'
 import { ContentTabs } from './_components/content-tabs'
 
 export default async function ContentPage() {
-  const [drafts, signals, linkedIn] = await Promise.all([
+  const [drafts, signals, linkedIn, emailCfg] = await Promise.all([
     getDrafts(),
     getSignals(),
     getLinkedInConnection(),
+    getEmailConfig(),
   ])
 
   return (
@@ -17,7 +18,12 @@ export default async function ContentPage() {
           Turn customer language into LinkedIn posts, emails, and briefs.
         </p>
       </div>
-      <ContentTabs drafts={drafts} signals={signals} linkedInConnected={linkedIn.connected} />
+      <ContentTabs
+        drafts={drafts}
+        signals={signals}
+        linkedInConnected={linkedIn.connected}
+        emailConfigured={emailCfg.configured}
+      />
     </div>
   )
 }

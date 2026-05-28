@@ -3,6 +3,8 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
 import { publishLinkedInPost } from '@/lib/sources/linkedin'
+import { sendEmail, draftBodyToHtml } from '@/lib/publishing/resend'
+import type { WorkspaceSettings } from '@/app/actions/workspace'
 
 async function requireWorkspace(): Promise<
   { workspaceId: string; userId: string } | { error: string }
@@ -111,4 +113,85 @@ export async function publishDraftToLinkedIn(
 
   revalidatePath('/content')
   return { postId: publishResult.postId, postUrl: postUrl ?? undefined }
+}
+
+export async function getEmailConfig(): Promise<{
+  configured: boolean
+  fromName?: string
+  fromEmail?: string
+}> {
+  const result = await requireWorkspace()
+  if ('error' in result) return { configured: false }
+
+  const { data: ws } = await adminClient
+    .from('workspaces')
+    .select('settings')
+    .eq('id', result.workspaceId)
+    .single()
+
+  const settings = (ws?.settings as WorkspaceSettings) ?? {}
+  if (!settings.resend_api_key || !settings.resend_from_email) return { configured: false }
+
+  return {
+    configured: true,
+    fromName: settings.resend_from_name,
+    fromEmail: settings.resend_from_email,
+  }
+}
+
+export async function publishDraftAsEmail(
+  draftId: string,
+  toEmail: string
+): Promise<{ error?: string; emailId?: string }> {
+  const result = await requireWorkspace()
+  if ('error' in result) return { error: result.error }
+
+  const { data: draft } = await adminClient
+    .from('content_drafts')
+    .select('id, title, body, status, format, workspace_id')
+    .eq('id', draftId)
+    .eq('workspace_id', result.workspaceId)
+    .single()
+
+  if (!draft) return { error: 'Draft not found' }
+  if (!draft.body?.trim()) return { error: 'Draft has no content to send' }
+  if (draft.format !== 'email_sequence') return { error: 'Only email sequence drafts can be sent as email' }
+  if (!toEmail.includes('@')) return { error: 'Invalid recipient email address' }
+
+  const { data: ws } = await adminClient
+    .from('workspaces')
+    .select('settings')
+    .eq('id', result.workspaceId)
+    .single()
+
+  const settings = (ws?.settings as WorkspaceSettings) ?? {}
+
+  if (!settings.resend_api_key || !settings.resend_from_email) {
+    return { error: 'Email not configured — add a Resend API key in Settings first' }
+  }
+
+  const fromAddress = settings.resend_from_name
+    ? `${settings.resend_from_name} <${settings.resend_from_email}>`
+    : settings.resend_from_email
+
+  const emailResult = await sendEmail(settings.resend_api_key, {
+    from: fromAddress,
+    to: toEmail,
+    subject: draft.title,
+    html: draftBodyToHtml(draft.body),
+    text: draft.body,
+  })
+
+  if (emailResult.error) return { error: emailResult.error }
+
+  await adminClient
+    .from('content_drafts')
+    .update({
+      status: 'published',
+      published_at: new Date().toISOString(),
+    })
+    .eq('id', draftId)
+
+  revalidatePath('/content')
+  return { emailId: emailResult.id }
 }

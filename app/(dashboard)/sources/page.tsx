@@ -1,5 +1,6 @@
 import { verifySession } from '@/lib/supabase/dal'
 import { adminClient } from '@/lib/supabase/admin'
+import { getWorkspaceSettings } from '@/app/actions/workspace'
 import { KrispCard } from './_components/krisp-card'
 import { RssSection } from './_components/rss-section'
 import { SlackCard } from './_components/slack-card'
@@ -7,6 +8,7 @@ import { GmailCard } from './_components/gmail-card'
 import { HubSpotCard } from './_components/hubspot-card'
 import { GranolaCard } from './_components/granola-card'
 import { LinkedInCard } from './_components/linkedin-card'
+import { EmailCard } from './_components/email-card'
 import { ManualImport } from './_components/manual-import'
 
 export default async function SourcesPage() {
@@ -20,6 +22,7 @@ export default async function SourcesPage() {
     { data: hubspotConnection },
     { data: linkedInConnection },
     { data: granolaConnection },
+    wsSettings,
   ] = await Promise.all([
     adminClient
       .from('source_connections')
@@ -63,6 +66,7 @@ export default async function SourcesPage() {
       .eq('user_id', user.id)
       .eq('source_type', 'granola')
       .single(),
+    getWorkspaceSettings(),
   ])
 
   return (
@@ -91,6 +95,11 @@ export default async function SourcesPage() {
 
       <div className="space-y-4">
         <LinkedInCard connection={linkedInConnection ?? null} />
+        <EmailCard
+          configured={!!wsSettings.resend_api_key}
+          fromName={wsSettings.resend_from_name}
+          fromEmail={wsSettings.resend_from_email}
+        />
       </div>
     </div>
   )

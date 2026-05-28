@@ -17,9 +17,10 @@ interface ContentTabsProps {
   drafts:             ContentDraft[]
   signals:            Signal[]
   linkedInConnected?: boolean
+  emailConfigured?:   boolean
 }
 
-export function ContentTabs({ drafts, signals, linkedInConnected = false }: ContentTabsProps) {
+export function ContentTabs({ drafts, signals, linkedInConnected = false, emailConfigured = false }: ContentTabsProps) {
   const [activeTab,          setActiveTab]          = useState<Tab>('drafts')
   const [pendingFormat,      setPendingFormat]      = useState<string | null>(null)
   const [highlightDraftId,   setHighlightDraftId]   = useState<string | null>(null)
@@ -66,6 +67,7 @@ export function ContentTabs({ drafts, signals, linkedInConnected = false }: Cont
           onPendingFormatConsumed={clearPendingFormat}
           highlightDraftId={highlightDraftId}
           linkedInConnected={linkedInConnected}
+          emailConfigured={emailConfigured}
         />
       )}
       {activeTab === 'templates' && <TemplatesTab onSelectTemplate={handleSelectTemplate} />}
