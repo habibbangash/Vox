@@ -149,18 +149,23 @@ export function DraftsTab({ drafts, pendingFormat, onPendingFormatConsumed, high
           <FileText className="size-8 mx-auto text-muted-foreground/50" />
           <div className="space-y-1">
             <p className="text-sm font-medium">No drafts yet</p>
-            <p className="text-xs text-muted-foreground">
-              Start from a template or create a blank draft above.
+            <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
+              Create one from a signal (AI-generated from your data) or start with a blank draft.
             </p>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => { setNewFormat('linkedin_post'); setShowNew(true) }}
-          >
-            <Plus className="size-3.5 mr-1.5" />
-            New LinkedIn post
-          </Button>
+          <div className="flex flex-col items-center gap-2">
+            <a href="?tab=signals" className="text-xs text-primary underline underline-offset-2 hover:opacity-80">
+              → Generate from a signal
+            </a>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => { setNewFormat('linkedin_post'); setShowNew(true) }}
+            >
+              <Plus className="size-3.5 mr-1.5" />
+              Start with a blank draft
+            </Button>
+          </div>
         </div>
       ) : null}
     </div>

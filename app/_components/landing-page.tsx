@@ -193,7 +193,7 @@ const CARDS = [
   },
   {
     label:       'FINDS THE SIGNAL',
-    description: 'Vox surfaces recurring topics, objections, and buying signals across all your sources. The more you connect, the sharper your intelligence gets.',
+    description: 'Signals are recurring themes your customers mention across calls, emails, and articles — automatically detected and ready to draft. The more you connect, the sharper your intelligence gets.',
     Diagram:     SignalDiagram,
   },
   {

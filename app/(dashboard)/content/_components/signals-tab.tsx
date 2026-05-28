@@ -236,17 +236,22 @@ export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
           <TrendingUp className="size-5 text-muted-foreground mx-auto" />
           <p className="text-sm font-medium">No signals yet</p>
           <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto">
-            Add an <code className="bg-muted rounded px-1 py-0.5">ANTHROPIC_API_KEY</code> to Supabase Edge Function secrets,
-            then ingest content. Signals will appear automatically once entities are extracted across multiple sources.
+            Signals are recurring themes detected across your meetings, articles, and conversations.
+            They appear once you&apos;ve connected a source and data has been ingested.
           </p>
-          <button
-            onClick={handleRefresh}
-            disabled={refreshPending}
-            className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`size-3.5 ${refreshPending ? 'animate-spin' : ''}`} />
-            Check now
-          </button>
+          <div className="flex flex-col items-center gap-1.5 pt-1">
+            <a href="/sources" className="text-xs text-primary underline underline-offset-2 hover:opacity-80">
+              → Connect a source to get started (2 min)
+            </a>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshPending}
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`size-3.5 ${refreshPending ? 'animate-spin' : ''}`} />
+              {refreshPending ? 'Computing…' : 'Already have data? Compute signals now'}
+            </button>
+          </div>
         </div>
       )}
     </div>

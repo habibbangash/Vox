@@ -74,14 +74,14 @@ export default async function DashboardPage() {
   // Onboarding checklist — shown until all steps are done
   const hasKey = !!(wsSettings as { anthropic_api_key?: string }).anthropic_api_key || !!process.env.ANTHROPIC_API_KEY
   const steps = [
-    { done: true,                     label: 'Workspace created',                href: null },
-    { done: (sourceCount ?? 0) > 0,   label: 'Connect a source',                 href: '/sources' },
-    { done: hasKey,                    label: 'Add Anthropic API key',             href: '/settings' },
-    { done: (docCount ?? 0) > 0,      label: 'Sync your first content',           href: '/sources' },
-    { done: (signalCount ?? 0) > 0,   label: 'Generate a signal (auto or manual)', href: '/content' },
-    { done: (draftCount ?? 0) > 0,    label: 'Create your first draft',           href: '/content' },
+    { done: true,                     label: 'Workspace created',                        href: null,       optional: false },
+    { done: (sourceCount ?? 0) > 0,   label: 'Connect a source',                         href: '/sources', optional: false },
+    { done: (docCount ?? 0) > 0,      label: 'Sync your first content (takes 2–5 min)',  href: '/sources', optional: false },
+    { done: (signalCount ?? 0) > 0,   label: 'Generate a signal (auto or manual)',       href: '/content', optional: false },
+    { done: (draftCount ?? 0) > 0,    label: 'Create your first draft',                  href: '/content', optional: false },
+    { done: hasKey,                    label: 'Add Anthropic API key',                    href: '/settings', optional: true  },
   ]
-  const allDone = steps.every((s) => s.done)
+  const allDone = steps.filter(s => !s.optional).every((s) => s.done)
 
   return (
     <div className="p-8 max-w-4xl space-y-8">
@@ -99,7 +99,7 @@ export default async function DashboardPage() {
           <div>
             <h2 className="text-sm font-medium">Quick start</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Complete these steps to get your first AI-generated draft.
+              Follow these steps to get your first AI-generated draft. Takes about 10 minutes.
             </p>
           </div>
           <div className="space-y-2">
@@ -109,16 +109,26 @@ export default async function DashboardPage() {
                   ? <CheckCircle2 className="size-4 text-green-500 shrink-0" />
                   : <Circle className="size-4 text-muted-foreground/40 shrink-0" />}
                 {step.href && !step.done ? (
-                  <Link
-                    href={step.href}
-                    className="text-sm text-primary hover:underline underline-offset-2"
-                  >
-                    {step.label}
-                  </Link>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Link
+                      href={step.href}
+                      className="text-sm text-primary hover:underline underline-offset-2"
+                    >
+                      {step.label}
+                    </Link>
+                    {step.optional && (
+                      <span className="shrink-0 text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">optional</span>
+                    )}
+                  </div>
                 ) : (
-                  <span className={`text-sm ${step.done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                    {step.label}
-                  </span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`text-sm ${step.done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                      {step.label}
+                    </span>
+                    {step.optional && !step.done && (
+                      <span className="shrink-0 text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">optional</span>
+                    )}
+                  </div>
                 )}
               </div>
             ))}
@@ -171,14 +181,14 @@ export default async function DashboardPage() {
               )})}
             </div>
           ) : (
-            <div className="rounded-lg border border-dashed py-6 text-center">
-              <p className="text-xs text-muted-foreground">
-                No signals yet.{' '}
-                <Link href="/sources" className="underline underline-offset-2">
-                  Connect sources
-                </Link>{' '}
-                to start.
+            <div className="rounded-lg border border-dashed py-6 text-center space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground">No signals yet</p>
+              <p className="text-xs text-muted-foreground max-w-[200px] mx-auto leading-relaxed">
+                Signals appear after data is ingested from your sources.
               </p>
+              <Link href="/sources" className="text-xs text-primary underline underline-offset-2 block">
+                → Connect a source first
+              </Link>
             </div>
           )}
         </section>
@@ -206,14 +216,14 @@ export default async function DashboardPage() {
               )})}
             </div>
           ) : (
-            <div className="rounded-lg border border-dashed py-6 text-center">
-              <p className="text-xs text-muted-foreground">
-                No drafts yet.{' '}
-                <Link href="/content" className="underline underline-offset-2">
-                  Generate from a signal
-                </Link>
-                .
+            <div className="rounded-lg border border-dashed py-6 text-center space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground">No drafts yet</p>
+              <p className="text-xs text-muted-foreground max-w-[200px] mx-auto leading-relaxed">
+                Once you have signals, turn them into LinkedIn posts, emails, or blog posts.
               </p>
+              <Link href="/content" className="text-xs text-primary underline underline-offset-2 block">
+                → Go to Content
+              </Link>
             </div>
           )}
         </section>

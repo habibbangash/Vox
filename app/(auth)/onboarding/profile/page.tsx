@@ -51,10 +51,10 @@ export default function ProfilePage() {
 
           <div className="space-y-2">
             <Label htmlFor="icp_description">
-              Ideal customer profile (ICP)
+              Who you sell to
             </Label>
             <p className="text-xs text-muted-foreground">
-              Who is your ideal buyer? Role, company size, industry, pain points.
+              Role, company size, industry, key pain points. The more specific, the better your content will be.
             </p>
             <Textarea
               id="icp_description"
@@ -66,10 +66,10 @@ export default function ProfilePage() {
 
           <div className="space-y-2">
             <Label htmlFor="target_personas">
-              Target personas
+              Job titles of your buyers
             </Label>
             <p className="text-xs text-muted-foreground">
-              One persona per line. These are the people you write content for.
+              Enter one job title per line — these are the people Vox writes content for.
             </p>
             <Textarea
               id="target_personas"

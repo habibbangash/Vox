@@ -57,6 +57,11 @@ export function KrispCard({ connection }: KrispCardProps) {
         <div className="flex items-center gap-2">
           <span className="text-base">🎙</span>
           <CardTitle>Krisp</CardTitle>
+          {!connection && (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+              Start here
+            </span>
+          )}
           {connection && (
             <span className="ml-auto rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-600 dark:text-green-400">
               Connected
@@ -65,6 +70,9 @@ export function KrispCard({ connection }: KrispCardProps) {
         </div>
         <CardDescription>
           Automatically ingest meeting transcripts from Krisp into your workspace.
+          {!connection && (
+            <span className="block mt-1 text-xs text-muted-foreground/70">⏱ 5 min to set up</span>
+          )}
         </CardDescription>
         {!connection && (
           <CardAction>
@@ -108,6 +116,11 @@ export function KrispCard({ connection }: KrispCardProps) {
                 </span>
               )}
             </div>
+            {connection.synced_count === 0 && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 rounded px-2.5 py-1.5">
+                Paste the webhook URL above into Krisp → Settings → Integrations. Transcripts will appear here automatically after your next meeting.
+              </p>
+            )}
           </CardContent>
 
           <CardFooter className="justify-between">

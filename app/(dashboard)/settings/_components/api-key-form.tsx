@@ -68,6 +68,23 @@ export function ApiKeyForm({ hasKey }: ApiKeyFormProps) {
         </div>
       ) : null}
 
+      {!hasKey && (
+        <div className="rounded-lg border bg-muted/30 px-4 py-3 text-xs text-muted-foreground leading-relaxed space-y-1">
+          <p className="font-medium text-foreground">What is this?</p>
+          <p>
+            Vox uses Anthropic&apos;s Claude AI to generate content drafts and extract insights from your sources.
+            You need an API key to enable these features.
+          </p>
+          <p>
+            Get a free key at{' '}
+            <a href="https://console.anthropic.com/keys" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 text-foreground">
+              console.anthropic.com/keys
+            </a>
+            {' '}— typical usage costs a few dollars per month.
+          </p>
+        </div>
+      )}
+
       <div className="space-y-1.5">
         <Label className="text-xs">{hasKey ? 'Replace key' : 'Anthropic API key'}</Label>
         <div className="flex gap-2">

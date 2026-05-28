@@ -53,6 +53,11 @@ export function RssSection({ connections }: RssSectionProps) {
         <div className="flex items-center gap-2">
           <span className="text-base">📡</span>
           <CardTitle>RSS Feeds</CardTitle>
+          {connections.length === 0 && (
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+              Start here
+            </span>
+          )}
           {connections.length > 0 && (
             <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
               {connections.length} feed{connections.length !== 1 ? 's' : ''}
@@ -61,6 +66,9 @@ export function RssSection({ connections }: RssSectionProps) {
         </div>
         <CardDescription>
           Pull articles and updates from any RSS or Atom feed into your workspace.
+          {connections.length === 0 && (
+            <span className="block mt-1 text-xs text-muted-foreground/70">⏱ 2 min to set up · Paste any RSS or Atom URL below</span>
+          )}
         </CardDescription>
       </CardHeader>
 
@@ -84,7 +92,7 @@ export function RssSection({ connections }: RssSectionProps) {
         )}
         {addState?.success && (
           <p className="text-xs text-green-600 dark:text-green-400">
-            Feed added — {addState.synced ?? 0} articles ingested.
+            Feed added — {addState.synced ?? 0} article{addState.synced !== 1 ? 's' : ''} ingested. Signals will be computed on the next hourly sync.
           </p>
         )}
 
