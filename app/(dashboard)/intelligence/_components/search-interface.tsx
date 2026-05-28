@@ -1,8 +1,9 @@
 'use client'
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useTransition, useCallback } from 'react'
 import { Search, Mic, Rss, Clock, Loader2, Sparkles } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { searchDocuments, type DocumentResult, type RecentResult } from '@/app/actions/intelligence'
+import { DocumentDrawer } from './document-drawer'
 
 const SOURCE_CONFIG: Record<string, { label: string; icon: React.ReactNode; style: string }> = {
   krisp:   { label: 'Meeting', icon: <Mic className="size-3" />, style: 'bg-violet-500/10 text-violet-600 dark:text-violet-400'  },
@@ -23,9 +24,13 @@ function SourceBadge({ type }: { type: string }) {
   )
 }
 
-function DocumentCard({ doc, showSimilarity }: { doc: DocumentResult; showSimilarity?: boolean }) {
+function DocumentCard({ doc, showSimilarity, onClick }: { doc: DocumentResult; showSimilarity?: boolean; onClick?: () => void }) {
   return (
-    <div className="rounded-lg border bg-card px-4 py-3 space-y-1.5 hover:bg-muted/30 transition-colors">
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full text-left rounded-lg border bg-card px-4 py-3 space-y-1.5 hover:bg-muted/30 transition-colors cursor-pointer"
+    >
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-medium leading-snug line-clamp-1">{doc.title}</p>
         <div className="flex shrink-0 items-center gap-2">
@@ -41,7 +46,7 @@ function DocumentCard({ doc, showSimilarity }: { doc: DocumentResult; showSimila
         {doc.author_name && <span>·</span>}
         <span>{new Date(doc.ingested_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
       </div>
-    </div>
+    </button>
   )
 }
 
@@ -68,6 +73,8 @@ export function SearchInterface({ initial }: SearchInterfaceProps) {
   const [searchError, setSearchError] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
+  const closeDrawer = useCallback(() => setSelectedDocId(null), [])
 
   // Debounced search — fires 400ms after the user stops typing
   useEffect(() => {
@@ -146,7 +153,7 @@ export function SearchInterface({ initial }: SearchInterfaceProps) {
                 {results.length} result{results.length !== 1 ? 's' : ''} for <span className="italic">"{query}"</span>
               </p>
               {results.map((doc) => (
-                <DocumentCard key={doc.id} doc={doc} showSimilarity />
+                <DocumentCard key={doc.id} doc={doc} showSimilarity onClick={() => setSelectedDocId(doc.id)} />
               ))}
 
               {/* RAG placeholder */}
@@ -179,7 +186,7 @@ export function SearchInterface({ initial }: SearchInterfaceProps) {
                 Recent
               </div>
               {initial.documents.map((doc) => (
-                <DocumentCard key={doc.id} doc={doc} />
+                <DocumentCard key={doc.id} doc={doc} onClick={() => setSelectedDocId(doc.id)} />
               ))}
             </>
           ) : (
@@ -194,6 +201,8 @@ export function SearchInterface({ initial }: SearchInterfaceProps) {
           )}
         </div>
       )}
+
+      <DocumentDrawer documentId={selectedDocId} onClose={closeDrawer} />
     </div>
   )
 }

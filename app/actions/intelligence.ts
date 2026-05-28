@@ -139,6 +139,46 @@ export async function getRecentDocuments(): Promise<RecentResult> {
   }
 }
 
+export interface DocumentDetail {
+  id:          string
+  title:       string
+  content:     string
+  source_type: string
+  author_name: string | null
+  ingested_at: string
+  url:         string | null
+}
+
+export async function getDocument(id: string): Promise<{ document: DocumentDetail | null; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { document: null, error: 'Not authenticated' }
+
+  const workspaceId = await getWorkspaceId(user.id)
+  if (!workspaceId) return { document: null, error: 'No workspace' }
+
+  const { data, error } = await adminClient
+    .from('source_documents')
+    .select('id, title, content, source_type, author_name, ingested_at, url')
+    .eq('id', id)
+    .eq('workspace_id', workspaceId)
+    .single()
+
+  if (error || !data) return { document: null, error: error?.message ?? 'Not found' }
+
+  return {
+    document: {
+      id:          data.id,
+      title:       data.title ?? 'Untitled',
+      content:     data.content ?? '',
+      source_type: data.source_type,
+      author_name: data.author_name ?? null,
+      ingested_at: data.ingested_at,
+      url:         (data as { url?: string | null }).url ?? null,
+    },
+  }
+}
+
 export interface TopEntity {
   id:             string
   type:           string
