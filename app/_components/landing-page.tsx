@@ -376,6 +376,131 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* ═══ SECTION 3 — Pricing ═════════════════════════════════════════════ */}
+      <section
+        id="pricing"
+        className="px-6 sm:px-8 py-24 sm:py-32"
+        style={{ background: 'hsl(220, 20%, 7%)' }}
+      >
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-xs tracking-[0.28em] uppercase font-semibold mb-4" style={{ color: MUTED }}>Pricing</p>
+            <h2
+              className="text-4xl sm:text-5xl font-normal text-white mb-5"
+              style={{ fontFamily: DISPLAY, letterSpacing: '-1px', lineHeight: 1.05 }}
+            >
+              Simple pricing.{' '}
+              <em className="not-italic" style={{ color: MUTED }}>No surprises.</em>
+            </h2>
+            <p className="text-base max-w-xl mx-auto leading-relaxed" style={{ color: MUTED }}>
+              Start free. Scale when your team does. Every plan includes all sources and the full intelligence layer.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Starter */}
+            <div
+              className="rounded-2xl p-7 flex flex-col gap-6"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1.5px solid rgba(255,255,255,0.12)' }}
+            >
+              <div className="space-y-1.5">
+                <p className="text-xs tracking-[0.18em] uppercase font-semibold" style={{ color: MUTED }}>Starter</p>
+                <p className="text-4xl font-semibold text-white">Free</p>
+                <p className="text-sm" style={{ color: MUTED }}>Perfect for solo operators getting started.</p>
+              </div>
+              <ul className="space-y-2.5 flex-1">
+                {['1 workspace', '3 connected sources', '20 drafts / month', 'LinkedIn + Email publish', 'Signals & entity graph'].map(f => (
+                  <li key={f} className="flex items-center gap-2.5 text-sm" style={{ color: 'rgba(255,255,255,0.75)' }}>
+                    <span className="size-4 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(255,255,255,0.1)' }}>
+                      <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/signup"
+                className="block text-center rounded-xl py-2.5 text-sm font-medium transition-colors"
+                style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.8)', border: '1.5px solid rgba(255,255,255,0.15)' }}
+              >
+                Get started free
+              </Link>
+            </div>
+
+            {/* Growth — highlighted */}
+            <div
+              className="rounded-2xl p-7 flex flex-col gap-6 relative"
+              style={{ background: 'rgba(59,130,246,0.12)', border: '1.5px solid rgba(59,130,246,0.5)' }}
+            >
+              <span
+                className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-semibold px-3 py-1 rounded-full"
+                style={{ background: 'rgb(59,130,246)', color: '#fff', letterSpacing: '0.06em' }}
+              >
+                MOST POPULAR
+              </span>
+              <div className="space-y-1.5">
+                <p className="text-xs tracking-[0.18em] uppercase font-semibold" style={{ color: 'rgb(147,197,253)' }}>Growth</p>
+                <div className="flex items-end gap-1.5">
+                  <p className="text-4xl font-semibold text-white">$79</p>
+                  <p className="text-sm mb-1.5" style={{ color: MUTED }}>/month</p>
+                </div>
+                <p className="text-sm" style={{ color: MUTED }}>For teams turning customer intelligence into pipeline.</p>
+              </div>
+              <ul className="space-y-2.5 flex-1">
+                {['Up to 5 seats', 'Unlimited sources', 'Unlimited drafts', 'All Starter features', 'Priority email support', 'Early access to new integrations'].map(f => (
+                  <li key={f} className="flex items-center gap-2.5 text-sm" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                    <span className="size-4 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(59,130,246,0.3)' }}>
+                      <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="rgb(147,197,253)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/signup"
+                className="block text-center rounded-xl py-2.5 text-sm font-medium transition-colors"
+                style={{ background: 'rgb(59,130,246)', color: '#fff' }}
+              >
+                Start free trial
+              </Link>
+            </div>
+
+            {/* Enterprise */}
+            <div
+              className="rounded-2xl p-7 flex flex-col gap-6"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1.5px solid rgba(255,255,255,0.12)' }}
+            >
+              <div className="space-y-1.5">
+                <p className="text-xs tracking-[0.18em] uppercase font-semibold" style={{ color: MUTED }}>Enterprise</p>
+                <p className="text-4xl font-semibold text-white">Custom</p>
+                <p className="text-sm" style={{ color: MUTED }}>For revenue teams that need scale and control.</p>
+              </div>
+              <ul className="space-y-2.5 flex-1">
+                {['Unlimited seats', 'Custom integrations', 'SSO / SAML', 'Dedicated Slack support', 'SLA + uptime guarantee', 'Custom data retention'].map(f => (
+                  <li key={f} className="flex items-center gap-2.5 text-sm" style={{ color: 'rgba(255,255,255,0.75)' }}>
+                    <span className="size-4 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(255,255,255,0.1)' }}>
+                      <svg width="8" height="6" viewBox="0 0 8 6" fill="none"><path d="M1 3l2 2 4-4" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <a
+                href="mailto:hello@vox.so"
+                className="block text-center rounded-xl py-2.5 text-sm font-medium transition-colors"
+                style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.8)', border: '1.5px solid rgba(255,255,255,0.15)' }}
+              >
+                Talk to us
+              </a>
+            </div>
+          </div>
+
+          <p className="text-center text-xs mt-10" style={{ color: MUTED }}>
+            All plans include a 14-day free trial. No credit card required.
+          </p>
+        </div>
+      </section>
+
     </div>
   )
 }

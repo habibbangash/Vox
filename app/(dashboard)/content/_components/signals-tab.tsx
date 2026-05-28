@@ -11,6 +11,14 @@ const SIGNAL_META: Record<SignalType, { label: string; icon: React.ComponentType
   competitor_mention: { label: 'Competitor Mention',  icon: Swords,      chip: 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300'         },
 }
 
+const FILTER_OPTIONS: { value: SignalType | 'all'; label: string }[] = [
+  { value: 'all',                label: 'All'               },
+  { value: 'recurring_topic',    label: 'Recurring Topics'  },
+  { value: 'objection_trend',    label: 'Objections'        },
+  { value: 'buying_signal',      label: 'Buying Signals'    },
+  { value: 'competitor_mention', label: 'Competitors'       },
+]
+
 interface SignalsTabProps {
   signals:        Signal[]
   onDraftCreated: (draftId: string) => void
@@ -19,8 +27,13 @@ interface SignalsTabProps {
 export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
   const router = useRouter()
   const [refreshPending, startRefresh] = useTransition()
-  const [generating, setGenerating] = useState<string | null>(null) // `${signalId}:${format}`
+  const [generating, setGenerating] = useState<string | null>(null)
   const [genError, setGenError] = useState<string | null>(null)
+  const [activeFilter, setActiveFilter] = useState<SignalType | 'all'>('all')
+
+  const filtered = activeFilter === 'all'
+    ? signals
+    : signals.filter(s => s.signal_type === activeFilter)
 
   function handleRefresh() {
     startRefresh(async () => {
@@ -63,23 +76,51 @@ export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
 
       {signals.length > 0 ? (
         <>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <TrendingUp className="size-3.5" />
-              {signals.length} signal{signals.length !== 1 ? 's' : ''} detected
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            {/* Filter pills */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {FILTER_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setActiveFilter(opt.value)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                    activeFilter === opt.value
+                      ? 'bg-foreground text-background'
+                      : 'bg-muted text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {opt.label}
+                  {opt.value !== 'all' && (
+                    <span className="ml-1 opacity-60">
+                      {signals.filter(s => s.signal_type === opt.value).length}
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
-            <button
-              onClick={handleRefresh}
-              disabled={refreshPending}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
-            >
-              <RefreshCw className={`size-3.5 ${refreshPending ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground">
+                {filtered.length} of {signals.length} signal{signals.length !== 1 ? 's' : ''}
+              </span>
+              <button
+                onClick={handleRefresh}
+                disabled={refreshPending}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`size-3.5 ${refreshPending ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
           </div>
 
+          {filtered.length === 0 && (
+            <p className="text-xs text-muted-foreground text-center py-6">
+              No {FILTER_OPTIONS.find(o => o.value === activeFilter)?.label.toLowerCase()} signals detected yet.
+            </p>
+          )}
+
           <div className="space-y-2">
-            {signals.map((signal) => {
+            {filtered.map((signal) => {
               const meta = SIGNAL_META[signal.signal_type]
               const Icon = meta.icon
               return (
