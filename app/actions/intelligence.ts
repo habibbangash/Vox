@@ -120,7 +120,7 @@ export async function getRecentDocuments(): Promise<RecentResult> {
       .from('source_documents')
       .select('*', { count: 'exact', head: true })
       .eq('workspace_id', workspaceId)
-      .is('embedding', null),
+      .eq('processed', false),
   ])
 
   const documents: DocumentResult[] = (recent ?? []).map((row) => ({
