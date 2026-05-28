@@ -283,13 +283,21 @@ export async function generateDraftFromSignal(
     return { error: 'ANTHROPIC_API_KEY not set — add it to your environment to enable AI drafts.' }
   }
 
-  // Load signal
-  const { data: signal } = await adminClient
-    .from('signals')
-    .select('*')
-    .eq('id', signalId)
-    .eq('workspace_id', result.workspaceId)
-    .single()
+  // Load signal + author profile in parallel
+  const [{ data: signal }, { data: authorProfile }] = await Promise.all([
+    adminClient
+      .from('signals')
+      .select('*')
+      .eq('id', signalId)
+      .eq('workspace_id', result.workspaceId)
+      .single(),
+    adminClient
+      .from('author_profiles')
+      .select('display_name, role, voice_notes')
+      .eq('workspace_id', result.workspaceId)
+      .eq('user_id', result.userId)
+      .single(),
+  ])
 
   if (!signal) return { error: 'Signal not found' }
 
@@ -315,7 +323,11 @@ export async function generateDraftFromSignal(
   const userPrompt = SIGNAL_PROMPTS[signal.signal_type as SignalType]?.(signal.title, format)
     ?? `Write a ${format.replace('_', ' ')} about "${signal.title}" based on the following context.\n${snippetBlock}`
 
-  const systemPrompt = `You are a B2B content strategist writing content for a SaaS company. Your writing sounds like a thoughtful practitioner, not a marketer. Use plain language, avoid corporate jargon, and prioritise customer voice over brand voice.\n\n${snippetBlock}`
+  const voiceContext = authorProfile?.voice_notes
+    ? `\n\nAuthor voice profile (${authorProfile.display_name ?? 'the author'}${authorProfile.role ? `, ${authorProfile.role}` : ''}):\n${authorProfile.voice_notes}`
+    : ''
+
+  const systemPrompt = `You are a B2B content strategist ghostwriting for a SaaS practitioner. Your writing sounds like a thoughtful practitioner, not a marketer. Use plain language, avoid corporate jargon, and prioritise customer voice over brand voice.${voiceContext}\n\n${snippetBlock}`
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
