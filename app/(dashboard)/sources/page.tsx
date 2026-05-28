@@ -70,6 +70,10 @@ export default async function SourcesPage() {
     getWorkspaceSettings(),
   ])
 
+  const noneConnected =
+    !krispConnection && !slackConnection && !gmailConnection &&
+    !hubspotConnection && !granolaConnection && (rssConnections ?? []).length === 0
+
   const healthConnections: HealthConnection[] = [
     krispConnection   && { id: krispConnection.id,   source_type: 'krisp',   display_name: null,                          error_message: (krispConnection as { error_message?: string | null }).error_message ?? null, last_synced_at: krispConnection.last_synced_at ?? null },
     slackConnection   && { id: slackConnection.id,   source_type: 'slack',   display_name: slackConnection.display_name ?? null,   error_message: slackConnection.error_message ?? null,   last_synced_at: slackConnection.last_synced_at ?? null },
@@ -87,6 +91,21 @@ export default async function SourcesPage() {
       </p>
 
       <SourceHealthBanner connections={healthConnections} />
+
+      {noneConnected && (
+        <div className="mb-6 rounded-lg border border-dashed px-6 py-8 space-y-3">
+          <p className="text-sm font-semibold">Connect your first source</p>
+          <p className="text-xs text-muted-foreground max-w-prose">
+            Vox ingests your meetings, articles, and CRM activity to surface signals for content. Pick a source below to get started — Krisp and RSS are the fastest to connect.
+          </p>
+          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground pt-1">
+            <span className="flex items-center gap-1.5 rounded-full border px-3 py-1">Krisp — meeting transcripts</span>
+            <span className="flex items-center gap-1.5 rounded-full border px-3 py-1">RSS — industry articles</span>
+            <span className="flex items-center gap-1.5 rounded-full border px-3 py-1">Gmail — key emails</span>
+            <span className="flex items-center gap-1.5 rounded-full border px-3 py-1">Slack — channel conversations</span>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4">
         <KrispCard connection={krispConnection ?? null} />

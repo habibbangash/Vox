@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useTransition, useCallback } from 'react'
-import { Search, Mic, Rss, Clock, Loader2, Sparkles } from 'lucide-react'
+import { Search, Mic, Rss, Clock, Loader2, Sparkles, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { searchDocuments, type DocumentResult, type RecentResult } from '@/app/actions/intelligence'
 import { DocumentDrawer } from './document-drawer'
@@ -129,8 +129,16 @@ export function SearchInterface({ initial }: SearchInterfaceProps) {
           placeholder="Search across meetings and articles…"
           className="pl-9 h-10"
         />
-        {isPending && (
+        {isPending ? (
           <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 animate-spin text-muted-foreground" />
+        ) : query && (
+          <button
+            type="button"
+            onClick={() => setQuery('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="size-4" />
+          </button>
         )}
       </div>
 
@@ -190,13 +198,26 @@ export function SearchInterface({ initial }: SearchInterfaceProps) {
               ))}
             </>
           ) : (
-            <div className="rounded-lg border border-dashed py-16 text-center space-y-2">
-              <p className="text-sm font-medium">No documents yet</p>
-              <p className="text-xs text-muted-foreground">
-                Connect Krisp or add an RSS feed on the{' '}
-                <a href="/sources" className="underline underline-offset-2">Sources page</a>{' '}
-                to start ingesting content.
-              </p>
+            <div className="rounded-lg border border-dashed px-6 py-12 space-y-5">
+              <div className="text-center space-y-1">
+                <p className="text-sm font-semibold">No documents yet</p>
+                <p className="text-xs text-muted-foreground">Follow these steps to start building your intelligence layer.</p>
+              </div>
+              <ol className="space-y-3 max-w-sm mx-auto">
+                {[
+                  { step: '1', text: 'Connect a source', href: '/sources', cta: 'Go to Sources' },
+                  { step: '2', text: 'Content syncs automatically every hour (or trigger a manual sync from Sources)' },
+                  { step: '3', text: 'Return here to search, explore documents, and generate content from signals' },
+                ].map(({ step, text, href, cta }) => (
+                  <li key={step} className="flex items-start gap-3 text-xs text-muted-foreground">
+                    <span className="shrink-0 size-5 rounded-full bg-muted flex items-center justify-center text-[10px] font-semibold text-foreground">{step}</span>
+                    <span className="pt-0.5">
+                      {text}{' '}
+                      {href && <a href={href} className="text-primary underline underline-offset-2 hover:opacity-80">{cta}</a>}
+                    </span>
+                  </li>
+                ))}
+              </ol>
             </div>
           )}
         </div>
