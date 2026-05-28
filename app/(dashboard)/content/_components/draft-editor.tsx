@@ -1,6 +1,6 @@
 'use client'
 import { useState, useTransition, useEffect, useRef } from 'react'
-import { ChevronDown, ChevronUp, Clipboard, ClipboardCheck, Sparkles, Trash2, Loader2, Search, X, Check, Plus, Send } from 'lucide-react'
+import { ChevronDown, ChevronUp, Clipboard, ClipboardCheck, Sparkles, Trash2, Loader2, Search, X, Check, Plus, Send, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -128,10 +128,24 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false, li
 
   function handleCopy() {
     if (!body) return
-    navigator.clipboard.writeText(body).then(() => {
+    const md = `# ${title}\n\n${body}`
+    navigator.clipboard.writeText(md).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
+  }
+
+  function handleDownload() {
+    if (!body) return
+    const content = `${title}\n${'='.repeat(title.length)}\n\n${body}`
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    const blob = new Blob([content], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${slug}.txt`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   async function handleGenerate() {
@@ -407,14 +421,22 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false, li
                     : <><Sparkles className="size-3.5" /> Generate</>}
                 </button>
                 {body && (
-                  <button
-                    onClick={handleCopy}
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {copied
-                      ? <><ClipboardCheck className="size-3.5 text-green-500" /> Copied</>
-                      : <><Clipboard className="size-3.5" /> Copy</>}
-                  </button>
+                  <>
+                    <button
+                      onClick={handleCopy}
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {copied
+                        ? <><ClipboardCheck className="size-3.5 text-green-500" /> Copied</>
+                        : <><Clipboard className="size-3.5" /> Copy Markdown</>}
+                    </button>
+                    <button
+                      onClick={handleDownload}
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <Download className="size-3.5" /> Download .txt
+                    </button>
+                  </>
                 )}
               </div>
             </div>
