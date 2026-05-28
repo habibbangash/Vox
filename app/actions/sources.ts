@@ -6,6 +6,11 @@ import { generateWebhookSecret } from '@/lib/sources/krisp'
 import { fetchFeed, validateFeedUrl } from '@/lib/sources/rss'
 import { fetchChannelMessages, fetchUserName, slackTsToDate } from '@/lib/sources/slack'
 import { fetchThreads, refreshGoogleToken } from '@/lib/sources/gmail'
+import {
+  refreshHubSpotToken,
+  fetchAllContacts, fetchAllDeals, fetchAllNotes, fetchAllCalls,
+  contactToDocument, dealToDocument, noteToDocument, callToDocument,
+} from '@/lib/sources/hubspot'
 
 export type SourceActionState = { error?: string; success?: boolean; synced?: number } | undefined
 
@@ -429,4 +434,93 @@ export async function updateGmailQuery(
 
   revalidatePath('/sources')
   return { success: true }
+}
+
+export async function syncHubSpot(connectionId: string): Promise<SourceActionState> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: connection } = await adminClient
+    .from('source_connections')
+    .select('id, workspace_id, user_id')
+    .eq('id', connectionId)
+    .single()
+
+  if (!connection || connection.user_id !== user.id) return { error: 'Not found' }
+
+  const { data: creds } = await adminClient
+    .from('source_credentials')
+    .select('access_token, refresh_token, expires_at')
+    .eq('connection_id', connectionId)
+    .single()
+
+  if (!creds?.access_token) return { error: 'No credentials found' }
+
+  // Refresh token if expired or expiring within 60 s (HubSpot tokens last ~30 min)
+  let accessToken = creds.access_token
+  if (creds.expires_at && new Date(creds.expires_at) < new Date(Date.now() + 60_000)) {
+    const refreshed = await refreshHubSpotToken(creds.refresh_token ?? '')
+    if (!refreshed) return { error: 'Could not refresh HubSpot token' }
+    accessToken = refreshed.access_token
+    await adminClient
+      .from('source_credentials')
+      .update({
+        access_token: refreshed.access_token,
+        refresh_token: refreshed.refresh_token,
+        expires_at: new Date(Date.now() + refreshed.expires_in * 1000).toISOString(),
+      })
+      .eq('connection_id', connectionId)
+  }
+
+  await adminClient
+    .from('source_connections')
+    .update({ status: 'syncing' })
+    .eq('id', connectionId)
+
+  try {
+    const [contacts, deals, notes, calls] = await Promise.all([
+      fetchAllContacts(accessToken),
+      fetchAllDeals(accessToken),
+      fetchAllNotes(accessToken),
+      fetchAllCalls(accessToken),
+    ])
+
+    const docs = [
+      ...contacts.map((c) => contactToDocument(c, connection.workspace_id, connectionId)),
+      ...deals.map((d) => dealToDocument(d, connection.workspace_id, connectionId)),
+      ...notes.map((n) => noteToDocument(n, connection.workspace_id, connectionId)),
+      ...calls.map((c) => callToDocument(c, connection.workspace_id, connectionId)),
+    ]
+
+    if (docs.length > 0) {
+      await adminClient
+        .from('source_documents')
+        .upsert(docs, { onConflict: 'workspace_id,source_type,external_id' })
+    }
+
+    const { count } = await adminClient
+      .from('source_documents')
+      .select('*', { count: 'exact', head: true })
+      .eq('connection_id', connectionId)
+
+    await adminClient
+      .from('source_connections')
+      .update({
+        status: 'active',
+        last_synced_at: new Date().toISOString(),
+        synced_count: count ?? 0,
+        error_message: null,
+      })
+      .eq('id', connectionId)
+
+    revalidatePath('/sources')
+    return { success: true, synced: count ?? 0 }
+  } catch (err) {
+    await adminClient
+      .from('source_connections')
+      .update({ status: 'error', error_message: err instanceof Error ? err.message : 'Sync failed' })
+      .eq('id', connectionId)
+    return { error: err instanceof Error ? err.message : 'Sync failed' }
+  }
 }

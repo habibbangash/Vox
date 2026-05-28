@@ -4,6 +4,7 @@ import { KrispCard } from './_components/krisp-card'
 import { RssSection } from './_components/rss-section'
 import { SlackCard } from './_components/slack-card'
 import { GmailCard } from './_components/gmail-card'
+import { HubSpotCard } from './_components/hubspot-card'
 
 export default async function SourcesPage() {
   const { user } = await verifySession()
@@ -13,6 +14,7 @@ export default async function SourcesPage() {
     { data: rssConnections },
     { data: slackConnection },
     { data: gmailConnection },
+    { data: hubspotConnection },
   ] = await Promise.all([
     adminClient
       .from('source_connections')
@@ -38,6 +40,12 @@ export default async function SourcesPage() {
       .eq('user_id', user.id)
       .eq('source_type', 'gmail')
       .single(),
+    adminClient
+      .from('source_connections')
+      .select('id, display_name, status, config, last_synced_at, synced_count, error_message')
+      .eq('user_id', user.id)
+      .eq('source_type', 'hubspot')
+      .single(),
   ])
 
   return (
@@ -52,6 +60,7 @@ export default async function SourcesPage() {
         <RssSection connections={(rssConnections ?? []) as Parameters<typeof RssSection>[0]['connections']} />
         <SlackCard connection={slackConnection ?? null} />
         <GmailCard connection={gmailConnection ?? null} />
+        <HubSpotCard connection={hubspotConnection ?? null} />
       </div>
     </div>
   )
