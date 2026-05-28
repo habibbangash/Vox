@@ -14,7 +14,8 @@ export async function login(state: AuthState, formData: FormData): Promise<AuthS
 
   if (error) return { error: error.message }
 
-  redirect('/dashboard')
+  const next = formData.get('next') as string | null
+  redirect(next?.startsWith('/') ? next : '/dashboard')
 }
 
 export async function signup(state: AuthState, formData: FormData): Promise<AuthState> {

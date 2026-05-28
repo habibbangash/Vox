@@ -1,12 +1,15 @@
 import { getAuthorProfile } from '@/app/actions/content'
 import { getWorkspaceSettings } from '@/app/actions/workspace'
+import { getTeamContext } from '@/app/actions/team'
 import { AuthorProfileForm } from './_components/author-profile-form'
 import { ApiKeyForm } from './_components/api-key-form'
+import { TeamMembers } from './_components/team-members'
 
 export default async function SettingsPage() {
-  const [profile, wsSettings] = await Promise.all([
+  const [profile, wsSettings, teamCtx] = await Promise.all([
     getAuthorProfile(),
     getWorkspaceSettings(),
+    getTeamContext(),
   ])
 
   return (
@@ -39,6 +42,28 @@ export default async function SettingsPage() {
             </p>
           </div>
           <ApiKeyForm hasKey={!!wsSettings.anthropic_api_key} />
+        </section>
+
+        <div className="border-t" />
+
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-base font-medium">Team members</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Invite teammates to collaborate in this workspace. Invite links expire after 7 days.
+            </p>
+          </div>
+          {teamCtx ? (
+            <TeamMembers
+              members={teamCtx.members}
+              invitations={teamCtx.invitations}
+              currentUserId={teamCtx.currentUserId}
+              currentUserRole={teamCtx.currentUserRole}
+              appUrl={process.env.NEXT_PUBLIC_APP_URL ?? ''}
+            />
+          ) : (
+            <p className="text-xs text-muted-foreground">Unable to load team data.</p>
+          )}
         </section>
       </div>
     </div>
