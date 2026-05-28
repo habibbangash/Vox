@@ -4,6 +4,7 @@ import { verifySession, getWorkspaceMembership } from '@/lib/supabase/dal'
 import { adminClient } from '@/lib/supabase/admin'
 import { getWorkspaceSettings } from '@/app/actions/workspace'
 import { relativeTime } from '@/lib/utils'
+import { WorkflowDiagram } from './_components/workflow-diagram'
 
 export default async function DashboardPage() {
   const { user } = await verifySession()
@@ -135,6 +136,14 @@ export default async function DashboardPage() {
           </div>
         </section>
       )}
+
+      {/* Workflow diagram */}
+      <WorkflowDiagram
+        sourceCount={sourceCount ?? 0}
+        docCount={docCount ?? 0}
+        signalCount={signalCount ?? 0}
+        draftCount={draftCount ?? 0}
+      />
 
       {/* Stats row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
