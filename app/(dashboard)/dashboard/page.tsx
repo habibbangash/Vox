@@ -5,6 +5,7 @@ import { adminClient } from '@/lib/supabase/admin'
 import { getWorkspaceSettings } from '@/app/actions/workspace'
 import { relativeTime } from '@/lib/utils'
 import { WorkflowDiagram } from './_components/workflow-diagram'
+import { OnboardingComplete } from './_components/onboarding-complete'
 
 export default async function DashboardPage() {
   const { user } = await verifySession()
@@ -135,6 +136,11 @@ export default async function DashboardPage() {
             ))}
           </div>
         </section>
+      )}
+
+      {/* Onboarding complete celebration */}
+      {allDone && (
+        <OnboardingComplete workspaceName={workspace?.name ?? 'Your workspace'} />
       )}
 
       {/* Workflow diagram */}
