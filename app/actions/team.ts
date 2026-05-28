@@ -50,30 +50,28 @@ export async function listTeamMembers(): Promise<TeamMember[]> {
 
   if (!data?.length) return []
 
-  // Fetch user emails from auth.users via admin
-  const members: TeamMember[] = await Promise.all(
-    data.map(async (m) => {
-      const { data: profile } = await adminClient
-        .from('author_profiles')
-        .select('display_name')
-        .eq('workspace_id', result.workspaceId)
-        .eq('user_id', m.user_id)
-        .single()
+  const userIds = data.map(m => m.user_id)
 
-      // Get email from auth admin API
-      const { data: authUser } = await adminClient.auth.admin.getUserById(m.user_id)
+  // Single batch query for all profiles + one listUsers call instead of N individual lookups
+  const [{ data: profiles }, { data: usersPage }] = await Promise.all([
+    adminClient
+      .from('author_profiles')
+      .select('user_id, display_name')
+      .eq('workspace_id', result.workspaceId)
+      .in('user_id', userIds),
+    adminClient.auth.admin.listUsers({ perPage: 1000 }),
+  ])
 
-      return {
-        user_id: m.user_id,
-        role: m.role,
-        joined_at: m.joined_at,
-        email: authUser.user?.email ?? null,
-        display_name: (profile as { display_name?: string } | null)?.display_name ?? null,
-      }
-    })
-  )
+  const profileMap = Object.fromEntries((profiles ?? []).map(p => [p.user_id, p.display_name as string | null]))
+  const emailMap = Object.fromEntries((usersPage?.users ?? []).filter(u => userIds.includes(u.id)).map(u => [u.id, u.email ?? null]))
 
-  return members
+  return data.map(m => ({
+    user_id: m.user_id,
+    role: m.role,
+    joined_at: m.joined_at,
+    email: emailMap[m.user_id] ?? null,
+    display_name: profileMap[m.user_id] ?? null,
+  }))
 }
 
 export async function listInvitations(): Promise<Invitation[]> {

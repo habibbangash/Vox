@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
   const state = randomUUID()
   const cookieStore = await cookies()
-  cookieStore.set('oauth_state', state, { httpOnly: true, sameSite: 'lax', maxAge: 300 })
+  cookieStore.set('oauth_state', state, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: 300 })
 
   const origin = request.nextUrl.origin
   const params = new URLSearchParams({

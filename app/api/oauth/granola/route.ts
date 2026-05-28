@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
   const state = randomBytes(16).toString('hex')
 
   const cookieStore = await cookies()
-  cookieStore.set('granola_oauth_state', state, { httpOnly: true, sameSite: 'lax', maxAge: 300 })
-  cookieStore.set('granola_code_verifier', codeVerifier, { httpOnly: true, sameSite: 'lax', maxAge: 300 })
+  cookieStore.set('granola_oauth_state', state, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: 300 })
+  cookieStore.set('granola_code_verifier', codeVerifier, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: 300 })
 
   const params = new URLSearchParams({
     response_type: 'code',

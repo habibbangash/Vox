@@ -158,6 +158,9 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false, li
       setGenerateError(result.error)
     } else if (result.body) {
       setBody(result.body)
+      // Persist immediately — don't rely on the 1.5s auto-save timer since
+      // the user may navigate away before it fires
+      await updateDraft(draft.id, { title, body: result.body, status, brief: { ...draft.brief, topic } })
     }
   }
 

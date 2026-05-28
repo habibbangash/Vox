@@ -197,6 +197,14 @@ export async function addDraftSource(
   const result = await requireWorkspace()
   if ('error' in result) return { error: result.error }
 
+  const { data: draft } = await adminClient
+    .from('content_drafts')
+    .select('id')
+    .eq('id', draftId)
+    .eq('workspace_id', result.workspaceId)
+    .single()
+  if (!draft) return { error: 'Draft not found' }
+
   const { error } = await adminClient
     .from('content_sources')
     .upsert({ draft_id: draftId, document_id: documentId, snippet }, { onConflict: 'draft_id,document_id' })
@@ -211,6 +219,14 @@ export async function removeDraftSource(draftId: string, documentId: string): Pr
   const result = await requireWorkspace()
   if ('error' in result) return { error: result.error }
 
+  const { data: draft } = await adminClient
+    .from('content_drafts')
+    .select('id')
+    .eq('id', draftId)
+    .eq('workspace_id', result.workspaceId)
+    .single()
+  if (!draft) return { error: 'Draft not found' }
+
   const { error } = await adminClient
     .from('content_sources')
     .delete()
@@ -224,6 +240,17 @@ export async function removeDraftSource(draftId: string, documentId: string): Pr
 }
 
 export async function getDraftSources(draftId: string) {
+  const result = await requireWorkspace()
+  if ('error' in result) return []
+
+  const { data: draft } = await adminClient
+    .from('content_drafts')
+    .select('id')
+    .eq('id', draftId)
+    .eq('workspace_id', result.workspaceId)
+    .single()
+  if (!draft) return []
+
   const { data } = await adminClient
     .from('content_sources')
     .select('id, document_id, snippet, created_at, source_documents(id, title, content, source_type, author_name, ingested_at)')

@@ -1,5 +1,5 @@
 'use client'
-import { useActionState, useTransition, useRef } from 'react'
+import { useActionState, useTransition, useRef, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardAction, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,10 +30,9 @@ export function RssSection({ connections }: RssSectionProps) {
   const [isPending, startTransition] = useTransition()
   const formRef = useRef<HTMLFormElement>(null)
 
-  // Clear the input on success
-  if (addState?.success && formRef.current) {
-    formRef.current.reset()
-  }
+  useEffect(() => {
+    if (addState?.success) formRef.current?.reset()
+  }, [addState])
 
   function handleSync(connectionId: string) {
     startTransition(async () => {

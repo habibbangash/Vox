@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
   cookieStore.set('oauth_state', state, {
     httpOnly: true,
     sameSite: 'lax',
+    secure: true,
     maxAge: 300,
   })
 

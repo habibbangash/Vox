@@ -81,49 +81,34 @@ export default async function AnalyticsPage() {
   }
 
   const [
-    { data: docs },
-    { data: signals },
-    { data: drafts },
+    { data: docRows },
+    { data: signalRows },
+    { data: statusRows },
+    { data: formatRows },
   ] = await Promise.all([
-    adminClient
-      .from('source_documents')
-      .select('source_type')
-      .eq('workspace_id', workspaceId),
-    adminClient
-      .from('signals')
-      .select('signal_type, dismissed_at')
-      .eq('workspace_id', workspaceId),
-    adminClient
-      .from('content_drafts')
-      .select('status, format, published_url, published_at, updated_at')
-      .eq('workspace_id', workspaceId),
+    adminClient.rpc('analytics_docs_by_source',   { p_workspace_id: workspaceId }),
+    adminClient.rpc('analytics_signals_summary',  { p_workspace_id: workspaceId }),
+    adminClient.rpc('analytics_drafts_by_status', { p_workspace_id: workspaceId }),
+    adminClient.rpc('analytics_drafts_by_format', { p_workspace_id: workspaceId }),
   ])
 
-  // Aggregate docs by source_type
-  const docsBySource: Record<string, number> = {}
-  for (const d of docs ?? []) {
-    docsBySource[d.source_type] = (docsBySource[d.source_type] ?? 0) + 1
-  }
-  const totalDocs = (docs ?? []).length
+  type DocRow     = { source_type: string; cnt: number }
+  type SignalRow  = { signal_type: string; active_cnt: number; dismissed_cnt: number }
+  type StatusRow  = { status: string; cnt: number }
+  type FormatRow  = { format: string; cnt: number }
+
+  const docsBySource: Record<string, number> = Object.fromEntries(((docRows ?? []) as DocRow[]).map(r => [r.source_type, Number(r.cnt)]))
+  const totalDocs    = Object.values(docsBySource).reduce((s, n) => s + n, 0)
   const maxDocSource = Math.max(...Object.values(docsBySource), 1)
 
-  // Aggregate signals
-  const activeSignals = (signals ?? []).filter(s => !s.dismissed_at)
-  const dismissedSignals = (signals ?? []).filter(s => s.dismissed_at)
-  const signalsByType: Record<string, number> = {}
-  for (const s of activeSignals) {
-    signalsByType[s.signal_type] = (signalsByType[s.signal_type] ?? 0) + 1
-  }
+  const signalsByType: Record<string, number> = Object.fromEntries(((signalRows ?? []) as SignalRow[]).map(r => [r.signal_type, Number(r.active_cnt)]))
+  const activeSignalsCount    = Object.values(signalsByType).reduce((s, n) => s + n, 0)
+  const dismissedSignalsCount = ((signalRows ?? []) as SignalRow[]).reduce((s, r) => s + Number(r.dismissed_cnt), 0)
   const maxSignal = Math.max(...Object.values(signalsByType), 1)
 
-  // Aggregate drafts
-  const draftsByStatus: Record<string, number> = {}
-  const draftsByFormat: Record<string, number> = {}
-  for (const d of drafts ?? []) {
-    draftsByStatus[d.status] = (draftsByStatus[d.status] ?? 0) + 1
-    draftsByFormat[d.format] = (draftsByFormat[d.format] ?? 0) + 1
-  }
-  const totalDrafts    = (drafts ?? []).length
+  const draftsByStatus: Record<string, number> = Object.fromEntries(((statusRows ?? []) as StatusRow[]).map(r => [r.status, Number(r.cnt)]))
+  const draftsByFormat: Record<string, number> = Object.fromEntries(((formatRows ?? []) as FormatRow[]).map(r => [r.format, Number(r.cnt)]))
+  const totalDrafts    = Object.values(draftsByStatus).reduce((s, n) => s + n, 0)
   const publishedCount = draftsByStatus['published'] ?? 0
   const maxDraftStatus = Math.max(...Object.values(draftsByStatus), 1)
 
@@ -143,7 +128,7 @@ export default async function AnalyticsPage() {
       {/* Top-line stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Documents"        value={totalDocs}        sub="across all sources"  href="/intelligence" />
-        <StatCard label="Active signals"   value={activeSignals.length} sub={`${dismissedSignals.length} dismissed`} href="/content" />
+        <StatCard label="Active signals"   value={activeSignalsCount} sub={`${dismissedSignalsCount} dismissed`} href="/content" />
         <StatCard label="Drafts"           value={totalDrafts}      sub="all statuses"        href="/content" />
         <StatCard label="Published"        value={publishedCount}   sub="posts sent"          href="/content" />
       </div>
@@ -205,7 +190,7 @@ export default async function AnalyticsPage() {
         <section className="space-y-4">
           <div>
             <h2 className="text-sm font-medium">Active signals by type</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">{activeSignals.length} active · {dismissedSignals.length} dismissed</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{activeSignalsCount} active · {dismissedSignalsCount} dismissed</p>
           </div>
           {orderedSignals.length > 0 ? (
             <div className="space-y-2.5">

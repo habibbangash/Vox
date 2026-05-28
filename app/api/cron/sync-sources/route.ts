@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminClient } from '@/lib/supabase/admin'
-import { syncConnectionInternal } from '@/app/actions/sources'
-import { computeSignals } from '@/app/actions/content'
+import { syncConnectionInternal } from '@/lib/sources/sync-connection'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -17,7 +16,7 @@ export async function GET(req: NextRequest) {
     .from('source_connections')
     .select('id, source_type, workspace_id')
     .eq('status', 'active')
-    .in('source_type', ['rss', 'slack', 'gmail', 'hubspot'])
+    .in('source_type', ['rss', 'slack', 'gmail', 'hubspot', 'granola'])
 
   if (!connections?.length) {
     return NextResponse.json({ ok: true, synced: 0, message: 'No active connections' })
@@ -33,8 +32,9 @@ export async function GET(req: NextRequest) {
     ...(r.status === 'fulfilled' ? r.value : { error: String(r.reason) }),
   }))
 
-  // Recompute signals after syncing
-  await computeSignals()
+  // Recompute signals directly via adminClient — server actions require a user
+  // session which is not available in cron context
+  await adminClient.rpc('compute_signals')
 
   return NextResponse.json({ ok: true, connections: summary })
 }
