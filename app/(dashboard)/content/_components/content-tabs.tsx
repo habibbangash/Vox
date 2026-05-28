@@ -6,6 +6,7 @@ import { DraftsTab } from './drafts-tab'
 import { TemplatesTab } from './templates-tab'
 import { PublishedTab } from './published-tab'
 import { CalendarTab } from './calendar-tab'
+import { FirstDraftModal } from './first-draft-modal'
 
 type Tab = 'signals' | 'drafts' | 'templates' | 'published' | 'calendar'
 
@@ -47,6 +48,14 @@ export function ContentTabs({ drafts, signals, linkedInConnected = false, emailC
 
   return (
     <div className="space-y-5">
+      {/* First-draft guided modal — shown once when user has signals but no drafts yet */}
+      {signals.length > 0 && drafts.length === 0 && (
+        <FirstDraftModal
+          signals={signals}
+          onDraftCreated={(draftId) => { setHighlightDraftId(draftId); setActiveTab('drafts') }}
+        />
+      )}
+
       {/* Tab bar */}
       <div className="flex gap-1 border-b overflow-x-auto">
         {TABS.map((tab) => {
