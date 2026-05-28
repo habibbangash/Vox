@@ -3,6 +3,7 @@ import { logout } from '@/app/actions/auth'
 import { getWorkspaceMembership } from '@/lib/supabase/dal'
 import { Button } from '@/components/ui/button'
 import { NavLinks } from './_components/nav-links'
+import { MobileHeader } from './_components/mobile-header'
 
 export default async function DashboardLayout({
   children,
@@ -19,9 +20,12 @@ export default async function DashboardLayout({
   const workspace = membership.workspaces as unknown as { name: string; slug: string } | null
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar */}
-      <aside className="w-56 shrink-0 flex flex-col border-r bg-card">
+    <div className="flex flex-col sm:flex-row h-screen overflow-hidden bg-background">
+      {/* Mobile top bar + slide-in drawer */}
+      <MobileHeader workspaceName={workspace?.name ?? '—'} />
+
+      {/* Sidebar — hidden on mobile */}
+      <aside className="hidden sm:flex w-56 shrink-0 flex-col border-r bg-card">
         {/* Logo */}
         <div className="px-4 py-5 border-b">
           <span className="text-xl font-bold tracking-tight">Vox</span>
@@ -52,7 +56,7 @@ export default async function DashboardLayout({
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto">{children}</main>
+      <main className="flex-1 overflow-y-auto min-h-0">{children}</main>
     </div>
   )
 }
