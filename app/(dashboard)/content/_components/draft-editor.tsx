@@ -22,9 +22,12 @@ const FORMAT_LABELS: Record<string, string> = {
   battle_card:    'Battle Card',
 }
 const SOURCE_STYLE: Record<string, { label: string; style: string }> = {
-  krisp:   { label: 'Meeting', style: 'bg-violet-500/10 text-violet-600' },
-  rss:     { label: 'Article', style: 'bg-blue-500/10 text-blue-600' },
-  granola: { label: 'Note',    style: 'bg-amber-500/10 text-amber-600' },
+  krisp:   { label: 'Meeting',  style: 'bg-violet-500/10 text-violet-600' },
+  rss:     { label: 'Article',  style: 'bg-blue-500/10 text-blue-600' },
+  granola: { label: 'Note',     style: 'bg-amber-500/10 text-amber-600' },
+  slack:   { label: 'Slack',    style: 'bg-green-500/10 text-green-600' },
+  gmail:   { label: 'Gmail',    style: 'bg-red-500/10 text-red-600' },
+  hubspot: { label: 'HubSpot',  style: 'bg-orange-500/10 text-orange-600' },
 }
 
 function SourceBadge({ type }: { type: string }) {
