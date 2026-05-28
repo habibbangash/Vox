@@ -38,23 +38,40 @@ export function ContentTabs({ drafts, signals, linkedInConnected = false, emailC
     setPendingFormat(null)
   }
 
+  const publishedCount = drafts.filter((d) => d.status === 'published').length
+  const tabCounts: Partial<Record<Tab, number>> = {
+    signals:   signals.length,
+    drafts:    drafts.length,
+    published: publishedCount,
+  }
+
   return (
     <div className="space-y-5">
       {/* Tab bar */}
-      <div className="flex gap-1 border-b">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-3 py-2 text-sm transition-colors border-b-2 -mb-px ${
-              activeTab === tab.id
-                ? 'border-foreground text-foreground font-medium'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex gap-1 border-b overflow-x-auto">
+        {TABS.map((tab) => {
+          const count = tabCounts[tab.id]
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm transition-colors border-b-2 -mb-px ${
+                activeTab === tab.id
+                  ? 'border-foreground text-foreground font-medium'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {tab.label}
+              {count !== undefined && count > 0 && (
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none ${
+                  activeTab === tab.id ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground'
+                }`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
       </div>
 
       {/* Tab panels */}

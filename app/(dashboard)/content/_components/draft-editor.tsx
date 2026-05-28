@@ -124,6 +124,7 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false, li
   }, [title, body, status, topic])
 
   const charCount = body.length
+  const wordCount = body.trim() === '' ? 0 : body.trim().split(/\s+/).length
   const LINKEDIN_MAX = 3000
 
   function handleCopy() {
@@ -406,6 +407,11 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false, li
             <div className="flex items-center justify-between">
               <Label className="text-xs">Content</Label>
               <div className="flex items-center gap-3">
+                {body && (
+                  <span className="text-xs text-muted-foreground">
+                    {wordCount.toLocaleString()} word{wordCount !== 1 ? 's' : ''}
+                  </span>
+                )}
                 {draft.format === 'linkedin_post' && (
                   <span className={`text-xs ${charCount > LINKEDIN_MAX ? 'text-destructive' : 'text-muted-foreground'}`}>
                     {charCount.toLocaleString()} / {LINKEDIN_MAX.toLocaleString()}
