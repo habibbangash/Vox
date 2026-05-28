@@ -155,7 +155,7 @@ export function pageToDocument(
     title: page.title,
     content: page.content,
     author_name: null,
-    url: page.url,
+    metadata: { url: page.url, last_edited: page.lastEdited } as Record<string, unknown>,
     ingested_at: new Date().toISOString(),
     processed: false,
   }
