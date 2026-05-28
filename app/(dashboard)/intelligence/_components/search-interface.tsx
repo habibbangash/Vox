@@ -12,6 +12,7 @@ const SOURCE_CONFIG: Record<string, { label: string; icon: React.ReactNode; styl
   slack:   { label: 'Slack',   icon: <Search className="size-3" />, style: 'bg-green-500/10 text-green-600 dark:text-green-400'  },
   gmail:   { label: 'Gmail',   icon: <Search className="size-3" />, style: 'bg-red-500/10 text-red-600 dark:text-red-400'        },
   hubspot: { label: 'HubSpot', icon: <Search className="size-3" />, style: 'bg-orange-500/10 text-orange-600 dark:text-orange-400'},
+  notion:  { label: 'Notion',  icon: <Search className="size-3" />, style: 'bg-gray-500/10 text-gray-600 dark:text-gray-400'   },
 }
 
 function SourceBadge({ type }: { type: string }) {

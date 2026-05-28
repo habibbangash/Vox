@@ -16,6 +16,7 @@ import {
   refreshGranolaToken,
   listMeetingIds, getMeetingsWithSummary, meetingToDocument,
 } from '@/lib/sources/granola'
+import { fetchNotionPages, pageToDocument } from '@/lib/sources/notion'
 
 export async function syncFeedById(connectionId: string, workspaceId: string, url: string): Promise<number> {
   await adminClient
@@ -226,6 +227,27 @@ export async function syncConnectionInternal(connectionId: string): Promise<{ sy
       const docs = meetings
         .filter(m => m.summary)
         .map(m => meetingToDocument(m, connection.workspace_id, connectionId))
+      if (docs.length > 0) await adminClient.from('source_documents').upsert(docs, { onConflict: 'workspace_id,source_type,external_id' })
+      const { count } = await adminClient.from('source_documents').select('*', { count: 'exact', head: true }).eq('connection_id', connectionId)
+      await adminClient.from('source_connections').update({ status: 'active', last_synced_at: new Date().toISOString(), synced_count: count ?? 0, error_message: null }).eq('id', connectionId)
+      return { synced: count ?? 0 }
+    } catch (err) {
+      await adminClient.from('source_connections').update({ status: 'error', error_message: err instanceof Error ? err.message : 'Sync failed' }).eq('id', connectionId)
+      return { error: err instanceof Error ? err.message : 'Sync failed' }
+    }
+  }
+
+  if (source_type === 'notion') {
+    const { data: creds } = await adminClient
+      .from('source_credentials')
+      .select('access_token')
+      .eq('connection_id', connectionId)
+      .single()
+    if (!creds?.access_token) return { error: 'No Notion token' }
+    await adminClient.from('source_connections').update({ status: 'syncing' }).eq('id', connectionId)
+    try {
+      const pages = await fetchNotionPages(creds.access_token)
+      const docs = pages.map((p) => pageToDocument(p, connection.workspace_id, connectionId))
       if (docs.length > 0) await adminClient.from('source_documents').upsert(docs, { onConflict: 'workspace_id,source_type,external_id' })
       const { count } = await adminClient.from('source_documents').select('*', { count: 'exact', head: true }).eq('connection_id', connectionId)
       await adminClient.from('source_connections').update({ status: 'active', last_synced_at: new Date().toISOString(), synced_count: count ?? 0, error_message: null }).eq('id', connectionId)

@@ -15,6 +15,7 @@ import {
   refreshGranolaToken,
   listMeetingIds, getMeetingsWithSummary, meetingToDocument,
 } from '@/lib/sources/granola'
+import { fetchNotionPages, pageToDocument } from '@/lib/sources/notion'
 import { syncFeedById } from '@/lib/sources/sync-connection'
 
 export type SourceActionState = { error?: string; success?: boolean; synced?: number } | undefined
@@ -530,6 +531,60 @@ export async function syncGranola(connectionId: string): Promise<SourceActionSta
     const docs = meetings
       .filter(m => m.summary)
       .map(m => meetingToDocument(m, connection.workspace_id, connectionId))
+
+    if (docs.length > 0) {
+      await adminClient
+        .from('source_documents')
+        .upsert(docs, { onConflict: 'workspace_id,source_type,external_id' })
+    }
+
+    const { count } = await adminClient
+      .from('source_documents')
+      .select('*', { count: 'exact', head: true })
+      .eq('connection_id', connectionId)
+
+    await adminClient
+      .from('source_connections')
+      .update({ status: 'active', last_synced_at: new Date().toISOString(), synced_count: count ?? 0, error_message: null })
+      .eq('id', connectionId)
+
+    revalidatePath('/sources')
+    return { success: true, synced: count ?? 0 }
+  } catch (err) {
+    await adminClient
+      .from('source_connections')
+      .update({ status: 'error', error_message: err instanceof Error ? err.message : 'Sync failed' })
+      .eq('id', connectionId)
+    return { error: err instanceof Error ? err.message : 'Sync failed' }
+  }
+}
+
+export async function syncNotion(connectionId: string): Promise<SourceActionState> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: connection } = await adminClient
+    .from('source_connections')
+    .select('id, workspace_id, user_id')
+    .eq('id', connectionId)
+    .single()
+
+  if (!connection || connection.user_id !== user.id) return { error: 'Not found' }
+
+  const { data: creds } = await adminClient
+    .from('source_credentials')
+    .select('access_token')
+    .eq('connection_id', connectionId)
+    .single()
+
+  if (!creds?.access_token) return { error: 'No credentials found' }
+
+  await adminClient.from('source_connections').update({ status: 'syncing' }).eq('id', connectionId)
+
+  try {
+    const pages = await fetchNotionPages(creds.access_token)
+    const docs = pages.map((p) => pageToDocument(p, connection.workspace_id, connectionId))
 
     if (docs.length > 0) {
       await adminClient

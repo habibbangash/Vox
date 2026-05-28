@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     .from('source_connections')
     .select('id, source_type, workspace_id')
     .eq('status', 'active')
-    .in('source_type', ['rss', 'slack', 'gmail', 'hubspot', 'granola'])
+    .in('source_type', ['rss', 'slack', 'gmail', 'hubspot', 'granola', 'notion'])
 
   if (!connections?.length) {
     return NextResponse.json({ ok: true, synced: 0, message: 'No active connections' })

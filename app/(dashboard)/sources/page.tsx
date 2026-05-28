@@ -7,6 +7,7 @@ import { SlackCard } from './_components/slack-card'
 import { GmailCard } from './_components/gmail-card'
 import { HubSpotCard } from './_components/hubspot-card'
 import { GranolaCard } from './_components/granola-card'
+import { NotionCard } from './_components/notion-card'
 import { LinkedInCard } from './_components/linkedin-card'
 import { EmailCard } from './_components/email-card'
 import { ManualImport } from './_components/manual-import'
@@ -23,6 +24,7 @@ export default async function SourcesPage() {
     { data: hubspotConnection },
     { data: linkedInConnection },
     { data: granolaConnection },
+    { data: notionConnection },
     wsSettings,
   ] = await Promise.all([
     adminClient
@@ -67,12 +69,18 @@ export default async function SourcesPage() {
       .eq('user_id', user.id)
       .eq('source_type', 'granola')
       .single(),
+    adminClient
+      .from('source_connections')
+      .select('id, display_name, status, config, last_synced_at, synced_count, error_message')
+      .eq('user_id', user.id)
+      .eq('source_type', 'notion')
+      .single(),
     getWorkspaceSettings(),
   ])
 
   const noneConnected =
     !krispConnection && !slackConnection && !gmailConnection &&
-    !hubspotConnection && !granolaConnection && (rssConnections ?? []).length === 0
+    !hubspotConnection && !granolaConnection && !notionConnection && (rssConnections ?? []).length === 0
 
   const healthConnections: HealthConnection[] = [
     krispConnection   && { id: krispConnection.id,   source_type: 'krisp',   display_name: null,                          error_message: (krispConnection as { error_message?: string | null }).error_message ?? null, last_synced_at: krispConnection.last_synced_at ?? null },
@@ -80,6 +88,7 @@ export default async function SourcesPage() {
     gmailConnection   && { id: gmailConnection.id,   source_type: 'gmail',   display_name: gmailConnection.display_name ?? null,   error_message: gmailConnection.error_message ?? null,   last_synced_at: gmailConnection.last_synced_at ?? null },
     hubspotConnection && { id: hubspotConnection.id, source_type: 'hubspot', display_name: hubspotConnection.display_name ?? null, error_message: hubspotConnection.error_message ?? null, last_synced_at: hubspotConnection.last_synced_at ?? null },
     granolaConnection && { id: granolaConnection.id, source_type: 'granola', display_name: granolaConnection.display_name ?? null, error_message: granolaConnection.error_message ?? null, last_synced_at: granolaConnection.last_synced_at ?? null },
+    notionConnection  && { id: notionConnection.id,  source_type: 'notion',  display_name: notionConnection.display_name ?? null,  error_message: notionConnection.error_message ?? null,  last_synced_at: notionConnection.last_synced_at ?? null },
     ...((rssConnections ?? []).map((c) => ({ id: c.id, source_type: 'rss', display_name: c.display_name ?? null, error_message: c.error_message ?? null, last_synced_at: c.last_synced_at ?? null }))),
   ].filter(Boolean) as HealthConnection[]
 
@@ -114,6 +123,10 @@ export default async function SourcesPage() {
         <GmailCard connection={gmailConnection ?? null} />
         <HubSpotCard connection={hubspotConnection ?? null} />
         <GranolaCard connection={granolaConnection ?? null} />
+        <NotionCard connection={notionConnection ? {
+          ...notionConnection,
+          config: (notionConnection.config ?? {}) as { workspace_id?: string; owner_name?: string | null; owner_email?: string | null },
+        } : null} />
         <ManualImport />
       </div>
 
