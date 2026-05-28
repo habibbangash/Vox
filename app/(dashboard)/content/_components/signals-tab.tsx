@@ -1,7 +1,7 @@
 'use client'
 import { useState, useTransition } from 'react'
-import { AlertCircle, Loader2, RefreshCw, Sparkles, TrendingUp, Zap, Swords } from 'lucide-react'
-import { type Signal, type SignalType, type ContentFormat, computeSignals, generateDraftFromSignal } from '@/app/actions/content'
+import { AlertCircle, Loader2, RefreshCw, Sparkles, TrendingUp, Zap, Swords, X } from 'lucide-react'
+import { type Signal, type SignalType, type ContentFormat, computeSignals, generateDraftFromSignal, dismissSignal } from '@/app/actions/content'
 import { useRouter } from 'next/navigation'
 
 const SIGNAL_META: Record<SignalType, { label: string; icon: React.ComponentType<{ className?: string }>; chip: string }> = {
@@ -30,10 +30,17 @@ export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
   const [generating, setGenerating] = useState<string | null>(null)
   const [genError, setGenError] = useState<string | null>(null)
   const [activeFilter, setActiveFilter] = useState<SignalType | 'all'>('all')
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
 
+  const visible = signals.filter(s => !dismissedIds.has(s.id))
   const filtered = activeFilter === 'all'
-    ? signals
-    : signals.filter(s => s.signal_type === activeFilter)
+    ? visible
+    : visible.filter(s => s.signal_type === activeFilter)
+
+  async function handleDismiss(signalId: string) {
+    setDismissedIds(prev => new Set([...prev, signalId]))
+    await dismissSignal(signalId)
+  }
 
   function handleRefresh() {
     startRefresh(async () => {
@@ -74,7 +81,7 @@ export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
         <p className="text-xs text-destructive rounded-md bg-destructive/10 px-3 py-2">{genError}</p>
       )}
 
-      {signals.length > 0 ? (
+      {visible.length > 0 ? (
         <>
           <div className="flex items-center justify-between gap-3 flex-wrap">
             {/* Filter pills */}
@@ -92,7 +99,7 @@ export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
                   {opt.label}
                   {opt.value !== 'all' && (
                     <span className="ml-1 opacity-60">
-                      {signals.filter(s => s.signal_type === opt.value).length}
+                      {visible.filter(s => s.signal_type === opt.value).length}
                     </span>
                   )}
                 </button>
@@ -100,7 +107,7 @@ export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
             </div>
             <div className="flex items-center gap-3">
               <span className="text-xs text-muted-foreground">
-                {filtered.length} of {signals.length} signal{signals.length !== 1 ? 's' : ''}
+                {filtered.length} of {visible.length} signal{visible.length !== 1 ? 's' : ''}
               </span>
               <button
                 onClick={handleRefresh}
@@ -137,6 +144,13 @@ export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
                       <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
                         {signal.source_count} source{signal.source_count !== 1 ? 's' : ''}
                       </span>
+                      <button
+                        onClick={() => handleDismiss(signal.id)}
+                        title="Dismiss signal"
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <X className="size-3.5" />
+                      </button>
                     </div>
                   </div>
                   {signal.description && (
@@ -175,6 +189,22 @@ export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
             })}
           </div>
         </>
+      ) : dismissedIds.size > 0 && signals.length > 0 ? (
+        <div className="rounded-lg border border-dashed p-6 text-center space-y-2">
+          <TrendingUp className="size-5 text-muted-foreground mx-auto" />
+          <p className="text-sm font-medium">All signals dismissed</p>
+          <p className="text-xs text-muted-foreground">
+            Refresh to recompute signals from your latest content.
+          </p>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshPending}
+            className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`size-3.5 ${refreshPending ? 'animate-spin' : ''}`} />
+            Refresh signals
+          </button>
+        </div>
       ) : (
         <div className="rounded-lg border border-dashed p-6 text-center space-y-2">
           <TrendingUp className="size-5 text-muted-foreground mx-auto" />

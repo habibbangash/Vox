@@ -67,6 +67,7 @@ export interface Signal {
   source_count:   number
   time_window:    string
   computed_at:    string
+  dismissed_at:   string | null
 }
 
 export type ContentActionState = { error?: string; success?: boolean; draftId?: string } | undefined
@@ -242,10 +243,25 @@ export async function getSignals(): Promise<Signal[]> {
     .from('signals')
     .select('*')
     .eq('workspace_id', result.workspaceId)
+    .is('dismissed_at', null)
     .order('document_count', { ascending: false })
     .limit(50)
 
   return (data ?? []) as Signal[]
+}
+
+export async function dismissSignal(signalId: string): Promise<{ error?: string }> {
+  const result = await requireWorkspace()
+  if ('error' in result) return { error: result.error }
+
+  const { error } = await adminClient
+    .from('signals')
+    .update({ dismissed_at: new Date().toISOString() })
+    .eq('id', signalId)
+    .eq('workspace_id', result.workspaceId)
+
+  if (error) return { error: error.message }
+  return {}
 }
 
 export async function computeSignals(): Promise<{ error?: string }> {
