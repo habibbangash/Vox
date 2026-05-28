@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardAction, CardContent }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { connectRSS, syncRSSFeed, disconnectSource } from '@/app/actions/sources'
+import { relativeTime } from '@/lib/utils'
 
 interface RSSConnection {
   id: string
@@ -118,7 +119,7 @@ export function RssSection({ connections }: RssSectionProps) {
                       <span>
                         Synced{' '}
                         <span className="font-medium text-foreground">
-                          {new Date(conn.last_synced_at).toLocaleDateString()}
+                          {relativeTime(conn.last_synced_at)}
                         </span>
                       </span>
                     )}

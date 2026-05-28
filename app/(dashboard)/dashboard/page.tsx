@@ -3,6 +3,7 @@ import { FileText, Layers, TrendingUp, Zap, CheckCircle2, Circle } from 'lucide-
 import { verifySession, getWorkspaceMembership } from '@/lib/supabase/dal'
 import { adminClient } from '@/lib/supabase/admin'
 import { getWorkspaceSettings } from '@/app/actions/workspace'
+import { relativeTime } from '@/lib/utils'
 
 export default async function DashboardPage() {
   const { user } = await verifySession()
@@ -240,6 +241,11 @@ export default async function DashboardPage() {
                 {conn.synced_count !== null && conn.source_type !== 'linkedin' && (
                   <span className="text-xs text-muted-foreground ml-1">
                     ({conn.synced_count.toLocaleString()} docs)
+                  </span>
+                )}
+                {conn.last_synced_at && (
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    {relativeTime(conn.last_synced_at)}
                   </span>
                 )}
               </div>

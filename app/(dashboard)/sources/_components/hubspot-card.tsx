@@ -3,6 +3,7 @@ import { useTransition } from 'react'
 import { Card, CardHeader, CardTitle, CardDescription, CardAction, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { syncHubSpot, disconnectSource } from '@/app/actions/sources'
+import { relativeTime } from '@/lib/utils'
 
 interface HubSpotConnection {
   id: string
@@ -79,7 +80,7 @@ export function HubSpotCard({ connection }: HubSpotCardProps) {
                   <span>
                     Last synced{' '}
                     <span className="font-medium text-foreground">
-                      {new Date(connection.last_synced_at).toLocaleDateString()}
+                      {relativeTime(connection.last_synced_at)}
                     </span>
                   </span>
                 )}

@@ -74,7 +74,13 @@ export function SearchInterface({ initial }: SearchInterfaceProps) {
   const [hasSearched, setHasSearched] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
+  const [activeSource, setActiveSource] = useState<string | null>(null)
   const closeDrawer = useCallback(() => setSelectedDocId(null), [])
+
+  const availableSources = [...new Set(initial.documents.map(d => d.source_type))]
+  const filteredDocs = activeSource
+    ? initial.documents.filter(d => d.source_type === activeSource)
+    : initial.documents
 
   // Debounced search — fires 400ms after the user stops typing
   useEffect(() => {
@@ -189,11 +195,37 @@ export function SearchInterface({ initial }: SearchInterfaceProps) {
         <div className="space-y-3">
           {hasRecentDocs ? (
             <>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Clock className="size-3.5" />
-                Recent
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mr-1">
+                  <Clock className="size-3.5" />
+                  Recent
+                </div>
+                {availableSources.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setActiveSource(null)}
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${activeSource === null ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                    >
+                      All
+                    </button>
+                    {availableSources.map(src => {
+                      const cfg = SOURCE_CONFIG[src] ?? { label: src, style: 'bg-muted text-muted-foreground' }
+                      return (
+                        <button
+                          key={src}
+                          type="button"
+                          onClick={() => setActiveSource(activeSource === src ? null : src)}
+                          className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${activeSource === src ? cfg.style + ' ring-1 ring-inset ring-current/30' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                        >
+                          {cfg.label}
+                        </button>
+                      )
+                    })}
+                  </>
+                )}
               </div>
-              {initial.documents.map((doc) => (
+              {filteredDocs.map((doc) => (
                 <DocumentCard key={doc.id} doc={doc} onClick={() => setSelectedDocId(doc.id)} />
               ))}
             </>

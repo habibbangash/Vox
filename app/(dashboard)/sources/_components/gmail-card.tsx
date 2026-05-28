@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardAction, CardContent, 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { syncGmail, updateGmailQuery, disconnectSource } from '@/app/actions/sources'
+import { relativeTime } from '@/lib/utils'
 
 interface GmailConnection {
   id: string
@@ -118,7 +119,7 @@ export function GmailCard({ connection }: GmailCardProps) {
                   <span>
                     Last synced{' '}
                     <span className="font-medium text-foreground">
-                      {new Date(connection.last_synced_at).toLocaleDateString()}
+                      {relativeTime(connection.last_synced_at)}
                     </span>
                   </span>
                 )}
