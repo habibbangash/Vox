@@ -39,12 +39,19 @@ export interface AuthorProfile {
   updated_at:   string
 }
 
+export type SignalType = 'recurring_topic' | 'objection_trend' | 'buying_signal' | 'competitor_mention'
+
 export interface Signal {
-  id:          string
-  topic:       string
-  description: string
-  source_count: number
-  stub:        true
+  id:             string
+  workspace_id:   string
+  signal_type:    SignalType
+  entity_id:      string | null
+  title:          string
+  description:    string | null
+  document_count: number
+  source_count:   number
+  time_window:    string
+  computed_at:    string
 }
 
 export type ContentActionState = { error?: string; success?: boolean; draftId?: string } | undefined
@@ -213,8 +220,28 @@ export async function getDraftSources(draftId: string) {
 // ─── Signals (stub) ───────────────────────────────────────────────────────────
 
 export async function getSignals(): Promise<Signal[]> {
-  // Stub — real detection unlocks when extraction pipeline is live
-  return []
+  const result = await requireWorkspace()
+  if ('error' in result) return []
+
+  const { data } = await adminClient
+    .from('signals')
+    .select('*')
+    .eq('workspace_id', result.workspaceId)
+    .order('document_count', { ascending: false })
+    .limit(50)
+
+  return (data ?? []) as Signal[]
+}
+
+export async function computeSignals(): Promise<{ error?: string }> {
+  const result = await requireWorkspace()
+  if ('error' in result) return { error: result.error }
+
+  const { error } = await adminClient.rpc('compute_signals')
+  if (error) return { error: error.message }
+
+  revalidatePath('/content')
+  return {}
 }
 
 // ─── Author profiles ──────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { type ContentDraft } from '@/app/actions/content'
+import { type ContentDraft, type Signal } from '@/app/actions/content'
 import { SignalsTab } from './signals-tab'
 import { DraftsTab } from './drafts-tab'
 import { TemplatesTab } from './templates-tab'
@@ -14,10 +14,11 @@ const TABS: { id: Tab; label: string }[] = [
 ]
 
 interface ContentTabsProps {
-  drafts: ContentDraft[]
+  drafts:   ContentDraft[]
+  signals:  Signal[]
 }
 
-export function ContentTabs({ drafts }: ContentTabsProps) {
+export function ContentTabs({ drafts, signals }: ContentTabsProps) {
   const [activeTab,     setActiveTab]     = useState<Tab>('drafts')
   const [pendingFormat, setPendingFormat] = useState<string | null>(null)
 
@@ -50,7 +51,7 @@ export function ContentTabs({ drafts }: ContentTabsProps) {
       </div>
 
       {/* Tab panels */}
-      {activeTab === 'signals'   && <SignalsTab />}
+      {activeTab === 'signals'   && <SignalsTab signals={signals} />}
       {activeTab === 'drafts'    && (
         <DraftsTab
           drafts={drafts}
