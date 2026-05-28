@@ -10,9 +10,10 @@ interface DraftsTabProps {
   drafts:                    ContentDraft[]
   pendingFormat?:            string | null
   onPendingFormatConsumed?:  () => void
+  highlightDraftId?:         string | null
 }
 
-export function DraftsTab({ drafts, pendingFormat, onPendingFormatConsumed }: DraftsTabProps) {
+export function DraftsTab({ drafts, pendingFormat, onPendingFormatConsumed, highlightDraftId }: DraftsTabProps) {
   const [showNew,   setShowNew]   = useState(false)
   const [newFormat, setNewFormat] = useState('linkedin_post')
 
@@ -60,6 +61,7 @@ export function DraftsTab({ drafts, pendingFormat, onPendingFormatConsumed }: Dr
               key={draft.id}
               draft={draft}
               initialSources={[]}
+              defaultExpanded={draft.id === highlightDraftId}
             />
           ))}
         </div>

@@ -53,12 +53,13 @@ interface LinkedSource {
 }
 
 interface DraftEditorProps {
-  draft: ContentDraft
-  initialSources: LinkedSource[]
+  draft:           ContentDraft
+  initialSources:  LinkedSource[]
+  defaultExpanded?: boolean
 }
 
-export function DraftEditor({ draft, initialSources }: DraftEditorProps) {
-  const [expanded, setExpanded] = useState(false)
+export function DraftEditor({ draft, initialSources, defaultExpanded = false }: DraftEditorProps) {
+  const [expanded, setExpanded] = useState(defaultExpanded)
   const [title,    setTitle]    = useState(draft.title)
   const [body,     setBody]     = useState(draft.body ?? '')
   const [status,   setStatus]   = useState(draft.status)

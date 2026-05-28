@@ -19,8 +19,9 @@ interface ContentTabsProps {
 }
 
 export function ContentTabs({ drafts, signals }: ContentTabsProps) {
-  const [activeTab,     setActiveTab]     = useState<Tab>('drafts')
-  const [pendingFormat, setPendingFormat] = useState<string | null>(null)
+  const [activeTab,          setActiveTab]          = useState<Tab>('drafts')
+  const [pendingFormat,      setPendingFormat]      = useState<string | null>(null)
+  const [highlightDraftId,   setHighlightDraftId]   = useState<string | null>(null)
 
   function handleSelectTemplate(format: string) {
     setPendingFormat(format)
@@ -51,12 +52,18 @@ export function ContentTabs({ drafts, signals }: ContentTabsProps) {
       </div>
 
       {/* Tab panels */}
-      {activeTab === 'signals'   && <SignalsTab signals={signals} onDraftCreated={() => setActiveTab('drafts')} />}
+      {activeTab === 'signals'   && (
+        <SignalsTab
+          signals={signals}
+          onDraftCreated={(draftId) => { setHighlightDraftId(draftId); setActiveTab('drafts') }}
+        />
+      )}
       {activeTab === 'drafts'    && (
         <DraftsTab
           drafts={drafts}
           pendingFormat={pendingFormat}
           onPendingFormatConsumed={clearPendingFormat}
+          highlightDraftId={highlightDraftId}
         />
       )}
       {activeTab === 'templates' && <TemplatesTab onSelectTemplate={handleSelectTemplate} />}

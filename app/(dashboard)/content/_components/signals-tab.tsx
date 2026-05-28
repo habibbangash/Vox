@@ -13,7 +13,7 @@ const SIGNAL_META: Record<SignalType, { label: string; icon: React.ComponentType
 
 interface SignalsTabProps {
   signals:        Signal[]
-  onDraftCreated: () => void
+  onDraftCreated: (draftId: string) => void
 }
 
 export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
@@ -39,7 +39,7 @@ export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
       setGenError(result.error)
     } else {
       router.refresh()
-      onDraftCreated()
+      onDraftCreated(result.draftId ?? '')
     }
   }
 
