@@ -1,5 +1,5 @@
 'use client'
-import { useState, useTransition, useEffect } from 'react'
+import { useState, useTransition, useEffect, useRef } from 'react'
 import { ChevronDown, ChevronUp, Clipboard, ClipboardCheck, Sparkles, Trash2, Loader2, Search, X, Check, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -85,7 +85,29 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false }: 
     })
   }, [expanded, sourcesLoaded, draft.id])
 
-  const [copied, setCopied] = useState(false)
+  const [copied,    setCopied]    = useState(false)
+  const [autoSaved, setAutoSaved] = useState(false)
+
+  // Auto-save 1.5 s after any content change (skip on initial mount)
+  const mountedRef = useRef(false)
+  useEffect(() => {
+    if (!mountedRef.current) { mountedRef.current = true; return }
+    setAutoSaved(false)
+    const timer = setTimeout(() => {
+      startSave(async () => {
+        await updateDraft(draft.id, {
+          title,
+          body: body || null,
+          status,
+          brief: { ...draft.brief, topic },
+        })
+        setAutoSaved(true)
+        setTimeout(() => setAutoSaved(false), 2000)
+      })
+    }, 1500)
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, body, status, topic])
 
   const charCount = body.length
   const LINKEDIN_MAX = 3000
@@ -375,10 +397,21 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false }: 
                 : <Trash2 className="size-3.5" />}
               Delete
             </button>
-            <Button size="sm" onClick={save} disabled={isSaving}>
-              {isSaving ? <Loader2 className="size-3.5 animate-spin mr-1.5" /> : null}
-              Save
-            </Button>
+            <div className="flex items-center gap-2">
+              {isSaving && (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Loader2 className="size-3 animate-spin" /> Saving…
+                </span>
+              )}
+              {autoSaved && !isSaving && (
+                <span className="text-xs text-green-500 flex items-center gap-1">
+                  <Check className="size-3" /> Saved
+                </span>
+              )}
+              <Button size="sm" onClick={save} disabled={isSaving} variant="outline">
+                Save
+              </Button>
+            </div>
           </div>
         </div>
       )}
