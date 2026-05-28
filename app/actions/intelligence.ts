@@ -1,4 +1,5 @@
 'use server'
+import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
 
@@ -222,4 +223,52 @@ export async function getTopEntities(limit = 30): Promise<TopEntity[]> {
       canonical_name: entity.canonical_name,
       mention_count: count,
     }))
+}
+
+// ─── RAG answer ───────────────────────────────────────────────────────────────
+
+async function resolveAnthropicKey(workspaceId: string): Promise<string | null> {
+  const { data: ws } = await adminClient
+    .from('workspaces')
+    .select('settings')
+    .eq('id', workspaceId)
+    .single()
+  const settings = ws?.settings as Record<string, string> | null
+  return settings?.['anthropic_api_key'] ?? process.env.ANTHROPIC_API_KEY ?? null
+}
+
+export async function answerFromDocuments(
+  query: string,
+  docs: DocumentResult[]
+): Promise<{ answer?: string; error?: string }> {
+  if (!query.trim() || docs.length === 0) return { error: 'No documents to answer from' }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const workspaceId = await getWorkspaceId(user.id)
+  if (!workspaceId) return { error: 'No workspace' }
+
+  const apiKey = await resolveAnthropicKey(workspaceId)
+  if (!apiKey) return { error: 'No Anthropic API key configured — add one in Settings.' }
+
+  const context = docs
+    .map((d, i) => `[${i + 1}] ${d.title}\n${d.snippet}`)
+    .join('\n\n')
+
+  const client = new Anthropic({ apiKey })
+  const message = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 400,
+    messages: [
+      {
+        role: 'user',
+        content: `Based on the following excerpts from internal documents, answer this question concisely in 2–4 sentences. Cite the relevant document titles. If the documents don't contain enough information to answer confidently, say so.\n\nQuestion: ${query}\n\nDocuments:\n${context}`,
+      },
+    ],
+  })
+
+  const answer = (message.content[0] as { type: string; text?: string }).text ?? ''
+  return { answer }
 }

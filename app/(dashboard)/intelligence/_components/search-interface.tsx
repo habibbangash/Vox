@@ -2,7 +2,7 @@
 import { useState, useEffect, useTransition, useCallback } from 'react'
 import { Search, Mic, Rss, Clock, Loader2, Sparkles, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { searchDocuments, type DocumentResult, type RecentResult } from '@/app/actions/intelligence'
+import { searchDocuments, answerFromDocuments, type DocumentResult, type RecentResult } from '@/app/actions/intelligence'
 import { DocumentDrawer } from './document-drawer'
 
 const SOURCE_CONFIG: Record<string, { label: string; icon: React.ReactNode; style: string }> = {
@@ -75,6 +75,9 @@ export function SearchInterface({ initial }: SearchInterfaceProps) {
   const [isPending, startTransition] = useTransition()
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
   const [activeSource, setActiveSource] = useState<string | null>(null)
+  const [ragAnswer, setRagAnswer] = useState<string | null>(null)
+  const [ragLoading, setRagLoading] = useState(false)
+  const [ragError, setRagError] = useState<string | null>(null)
   const closeDrawer = useCallback(() => setSelectedDocId(null), [])
 
   const availableSources = [...new Set(initial.documents.map(d => d.source_type))]
@@ -88,16 +91,27 @@ export function SearchInterface({ initial }: SearchInterfaceProps) {
       setResults([])
       setHasSearched(false)
       setSearchError(null)
+      setRagAnswer(null)
+      setRagError(null)
       return
     }
 
     const timer = setTimeout(() => {
       startTransition(async () => {
         setSearchError(null)
+        setRagAnswer(null)
+        setRagError(null)
         const res = await searchDocuments(query)
         setResults(res.results)
         setHasSearched(true)
         if (res.error) setSearchError(res.error)
+        if (res.results.length > 0) {
+          setRagLoading(true)
+          const rag = await answerFromDocuments(query, res.results.slice(0, 5))
+          setRagLoading(false)
+          if (rag.error) setRagError(rag.error)
+          else setRagAnswer(rag.answer ?? null)
+        }
       })
     }, 400)
 
@@ -170,16 +184,29 @@ export function SearchInterface({ initial }: SearchInterfaceProps) {
                 <DocumentCard key={doc.id} doc={doc} showSimilarity onClick={() => setSelectedDocId(doc.id)} />
               ))}
 
-              {/* RAG placeholder */}
-              <div className="rounded-lg border border-dashed p-4 space-y-1 mt-2">
-                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                  <Sparkles className="size-3.5" />
-                  AI answer
+              {/* RAG answer */}
+              {(ragLoading || ragAnswer || ragError) && (
+                <div className="rounded-lg border bg-muted/30 p-4 space-y-2 mt-2">
+                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <Sparkles className="size-3.5" />
+                    AI answer
+                    {ragLoading && <Loader2 className="size-3 animate-spin ml-1" />}
+                  </div>
+                  {ragLoading && (
+                    <div className="space-y-1.5">
+                      <div className="h-3 w-full rounded bg-muted animate-pulse" />
+                      <div className="h-3 w-5/6 rounded bg-muted animate-pulse" />
+                      <div className="h-3 w-4/6 rounded bg-muted animate-pulse" />
+                    </div>
+                  )}
+                  {ragAnswer && !ragLoading && (
+                    <p className="text-xs text-foreground leading-relaxed">{ragAnswer}</p>
+                  )}
+                  {ragError && !ragLoading && (
+                    <p className="text-xs text-muted-foreground">{ragError}</p>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Summaries and answers will appear here once the extraction pipeline is live.
-                </p>
-              </div>
+              )}
             </>
           ) : hasSearched ? (
             <div className="py-8 text-center text-sm text-muted-foreground space-y-1">
