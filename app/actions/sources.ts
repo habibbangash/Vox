@@ -658,3 +658,81 @@ export async function syncConnectionInternal(connectionId: string): Promise<{ sy
 
   return { error: `No auto-sync for source_type: ${source_type}` }
 }
+
+// ─── Manual content import ────────────────────────────────────────────────────
+
+export async function importManualContent(input: {
+  title: string
+  content: string
+  author_name: string | null
+}): Promise<SourceActionState> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: member } = await adminClient
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('user_id', user.id)
+    .single()
+  if (!member) return { error: 'No workspace found' }
+
+  // Ensure a manual source_connection exists for this user
+  let { data: connection } = await adminClient
+    .from('source_connections')
+    .select('id')
+    .eq('workspace_id', member.workspace_id)
+    .eq('user_id', user.id)
+    .eq('source_type', 'manual')
+    .single()
+
+  if (!connection) {
+    const { data: inserted, error: connErr } = await adminClient
+      .from('source_connections')
+      .insert({
+        workspace_id: member.workspace_id,
+        user_id: user.id,
+        source_type: 'manual',
+        display_name: 'Manual imports',
+        status: 'active',
+      })
+      .select('id')
+      .single()
+
+    if (connErr || !inserted) return { error: connErr?.message ?? 'Failed to create source' }
+    connection = inserted
+  }
+
+  const externalId = `manual_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+
+  const { error } = await adminClient
+    .from('source_documents')
+    .insert({
+      workspace_id: member.workspace_id,
+      connection_id: connection.id,
+      source_type: 'manual',
+      external_id: externalId,
+      title: input.title,
+      content: input.content,
+      author_name: input.author_name,
+      metadata: {} as Record<string, unknown>,
+      processed: false,
+      ingested_at: new Date().toISOString(),
+    })
+
+  if (error) return { error: error.message }
+
+  // Update synced_count
+  const { count } = await adminClient
+    .from('source_documents')
+    .select('*', { count: 'exact', head: true })
+    .eq('connection_id', connection.id)
+
+  await adminClient
+    .from('source_connections')
+    .update({ last_synced_at: new Date().toISOString(), synced_count: count ?? 0 })
+    .eq('id', connection.id)
+
+  revalidatePath('/sources')
+  return { success: true }
+}

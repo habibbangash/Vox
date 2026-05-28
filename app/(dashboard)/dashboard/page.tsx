@@ -1,7 +1,8 @@
 import Link from 'next/link'
-import { FileText, Layers, TrendingUp, Zap } from 'lucide-react'
+import { FileText, Layers, TrendingUp, Zap, CheckCircle2, Circle } from 'lucide-react'
 import { verifySession, getWorkspaceMembership } from '@/lib/supabase/dal'
 import { adminClient } from '@/lib/supabase/admin'
+import { getWorkspaceSettings } from '@/app/actions/workspace'
 
 export default async function DashboardPage() {
   const { user } = await verifySession()
@@ -17,6 +18,7 @@ export default async function DashboardPage() {
     { data: recentSignals },
     { data: recentDrafts },
     { data: connections },
+    wsSettings,
   ] = await Promise.all([
     workspaceId
       ? adminClient.from('source_documents').select('*', { count: 'exact', head: true }).eq('workspace_id', workspaceId)
@@ -28,7 +30,7 @@ export default async function DashboardPage() {
       ? adminClient.from('content_drafts').select('*', { count: 'exact', head: true }).eq('workspace_id', workspaceId)
       : Promise.resolve({ count: 0 }),
     workspaceId
-      ? adminClient.from('source_connections').select('*', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'active')
+      ? adminClient.from('source_connections').select('*', { count: 'exact', head: true }).eq('workspace_id', workspaceId).eq('status', 'active').neq('source_type', 'linkedin')
       : Promise.resolve({ count: 0 }),
     workspaceId
       ? adminClient.from('signals').select('id, title, signal_type, document_count, source_count').eq('workspace_id', workspaceId).order('document_count', { ascending: false }).limit(3)
@@ -39,6 +41,7 @@ export default async function DashboardPage() {
     workspaceId
       ? adminClient.from('source_connections').select('source_type, display_name, status, last_synced_at, synced_count').eq('workspace_id', workspaceId).eq('status', 'active')
       : Promise.resolve({ data: [] }),
+    getWorkspaceSettings(),
   ])
 
   const stats = [
@@ -67,6 +70,18 @@ export default async function DashboardPage() {
     published: 'text-green-600',
   }
 
+  // Onboarding checklist — shown until all steps are done
+  const hasKey = !!(wsSettings as { anthropic_api_key?: string }).anthropic_api_key || !!process.env.ANTHROPIC_API_KEY
+  const steps = [
+    { done: true,                     label: 'Workspace created',                href: null },
+    { done: (sourceCount ?? 0) > 0,   label: 'Connect a source',                 href: '/sources' },
+    { done: hasKey,                    label: 'Add Anthropic API key',             href: '/settings' },
+    { done: (docCount ?? 0) > 0,      label: 'Sync your first content',           href: '/sources' },
+    { done: (signalCount ?? 0) > 0,   label: 'Generate a signal (auto or manual)', href: '/content' },
+    { done: (draftCount ?? 0) > 0,    label: 'Create your first draft',           href: '/content' },
+  ]
+  const allDone = steps.every((s) => s.done)
+
   return (
     <div className="p-8 max-w-4xl space-y-8">
       {/* Header */}
@@ -76,6 +91,39 @@ export default async function DashboardPage() {
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">{user.email}</p>
       </div>
+
+      {/* Onboarding checklist */}
+      {!allDone && (
+        <section className="rounded-lg border bg-card p-5 space-y-3">
+          <div>
+            <h2 className="text-sm font-medium">Quick start</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Complete these steps to get your first AI-generated draft.
+            </p>
+          </div>
+          <div className="space-y-2">
+            {steps.map((step, i) => (
+              <div key={i} className="flex items-center gap-3">
+                {step.done
+                  ? <CheckCircle2 className="size-4 text-green-500 shrink-0" />
+                  : <Circle className="size-4 text-muted-foreground/40 shrink-0" />}
+                {step.href && !step.done ? (
+                  <Link
+                    href={step.href}
+                    className="text-sm text-primary hover:underline underline-offset-2"
+                  >
+                    {step.label}
+                  </Link>
+                ) : (
+                  <span className={`text-sm ${step.done ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                    {step.label}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Stats row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -181,7 +229,7 @@ export default async function DashboardPage() {
           </div>
           <div className="flex flex-wrap gap-2">
             {(connections ?? []).map((c, i) => {
-              const conn = c as { source_type: string; display_name: string | null; synced_count: number | null }
+              const conn = c as { source_type: string; display_name: string | null; synced_count: number | null; last_synced_at: string | null }
               return (
               <div key={i} className="rounded-md border bg-card px-3 py-2 flex items-center gap-2">
                 <span className="size-2 rounded-full bg-green-500" />
@@ -189,7 +237,7 @@ export default async function DashboardPage() {
                 {conn.display_name && (
                   <span className="text-xs text-muted-foreground">— {conn.display_name}</span>
                 )}
-                {conn.synced_count !== null && (
+                {conn.synced_count !== null && conn.source_type !== 'linkedin' && (
                   <span className="text-xs text-muted-foreground ml-1">
                     ({conn.synced_count.toLocaleString()} docs)
                   </span>
@@ -198,22 +246,6 @@ export default async function DashboardPage() {
             )})}
           </div>
         </section>
-      )}
-
-      {/* Zero-state CTA */}
-      {(docCount ?? 0) === 0 && (
-        <div className="rounded-lg border border-dashed p-6 text-center space-y-3">
-          <p className="text-sm font-medium">Ready to start</p>
-          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-            Connect your first source to begin ingesting meeting transcripts, articles, and CRM data into Vox.
-          </p>
-          <Link
-            href="/sources"
-            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-foreground text-background hover:bg-foreground/90 transition-colors"
-          >
-            Connect a source
-          </Link>
-        </div>
       )}
     </div>
   )

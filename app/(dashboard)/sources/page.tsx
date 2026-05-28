@@ -6,6 +6,7 @@ import { SlackCard } from './_components/slack-card'
 import { GmailCard } from './_components/gmail-card'
 import { HubSpotCard } from './_components/hubspot-card'
 import { LinkedInCard } from './_components/linkedin-card'
+import { ManualImport } from './_components/manual-import'
 
 export default async function SourcesPage() {
   const { user } = await verifySession()
@@ -69,6 +70,7 @@ export default async function SourcesPage() {
         <SlackCard connection={slackConnection ?? null} />
         <GmailCard connection={gmailConnection ?? null} />
         <HubSpotCard connection={hubspotConnection ?? null} />
+        <ManualImport />
       </div>
 
       <div className="mt-10 mb-6">
