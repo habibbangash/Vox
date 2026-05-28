@@ -20,7 +20,7 @@ export default async function SettingsPage() {
   const memberRole = (membership as unknown as { role?: string } | null)?.role ?? 'member'
 
   return (
-    <div className="p-8 max-w-2xl">
+    <div className="p-4 sm:p-8 max-w-2xl">
       <div className="mb-7">
         <h1 className="text-2xl font-semibold tracking-tight mb-1">Settings</h1>
         <p className="text-muted-foreground text-sm">

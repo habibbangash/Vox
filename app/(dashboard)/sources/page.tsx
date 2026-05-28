@@ -92,59 +92,102 @@ export default async function SourcesPage() {
     ...((rssConnections ?? []).map((c) => ({ id: c.id, source_type: 'rss', display_name: c.display_name ?? null, error_message: c.error_message ?? null, last_synced_at: c.last_synced_at ?? null }))),
   ].filter(Boolean) as HealthConnection[]
 
+  const startHereConnected = !!krispConnection || (rssConnections ?? []).length > 0
+  const popularConnected   = !!slackConnection || !!gmailConnection || !!hubspotConnection
+  const advancedConnected  = !!granolaConnection || !!notionConnection
+
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="p-4 sm:p-8 max-w-4xl">
       <h1 className="text-2xl font-semibold tracking-tight mb-1">Sources</h1>
-      <p className="text-muted-foreground text-sm mb-8">
+      <p className="text-muted-foreground text-sm mb-6">
         Connect your meeting tools and content feeds to automatically ingest data into your workspace.
       </p>
 
       <SourceHealthBanner connections={healthConnections} />
 
       {noneConnected && (
-        <div className="mb-6 rounded-lg border border-dashed px-6 py-8 space-y-3">
-          <p className="text-sm font-semibold">Connect your first source</p>
-          <p className="text-xs text-muted-foreground max-w-prose">
-            Vox ingests your meetings, articles, and CRM activity to surface signals for content. Pick a source below to get started — Krisp and RSS are the fastest to connect.
+        <div className="mb-8 rounded-lg border border-dashed px-6 py-6 space-y-2">
+          <p className="text-sm font-semibold">Start with the fastest sources</p>
+          <p className="text-xs text-muted-foreground max-w-prose leading-relaxed">
+            Krisp and RSS are the quickest to connect — under 5 minutes each.
+            Once data starts flowing, Vox automatically surfaces signals for content.
           </p>
-          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground pt-1">
-            <span className="flex items-center gap-1.5 rounded-full border px-3 py-1">Krisp — meeting transcripts</span>
-            <span className="flex items-center gap-1.5 rounded-full border px-3 py-1">RSS — industry articles</span>
-            <span className="flex items-center gap-1.5 rounded-full border px-3 py-1">Gmail — key emails</span>
-            <span className="flex items-center gap-1.5 rounded-full border px-3 py-1">Slack — channel conversations</span>
-          </div>
         </div>
       )}
 
-      <div className="space-y-4">
+      {/* ── START HERE ───────────────────────────────────────────── */}
+      <section className="space-y-4 mb-10">
+        <div className="flex items-center gap-3">
+          <div>
+            <h2 className="text-sm font-semibold flex items-center gap-2">
+              Start here
+              {startHereConnected && (
+                <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-600 dark:text-green-400">
+                  Connected
+                </span>
+              )}
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Fastest to set up — under 5 minutes</p>
+          </div>
+        </div>
         <KrispCard connection={krispConnection ?? null} />
         <RssSection connections={(rssConnections ?? []) as Parameters<typeof RssSection>[0]['connections']} />
+      </section>
+
+      {/* ── POPULAR SOURCES ──────────────────────────────────────── */}
+      <section className="space-y-4 mb-10">
+        <div>
+          <h2 className="text-sm font-semibold flex items-center gap-2">
+            Popular sources
+            {popularConnected && (
+              <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-600 dark:text-green-400">
+                Connected
+              </span>
+            )}
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">OAuth-based — about 10 minutes each</p>
+        </div>
         <SlackCard connection={slackConnection ?? null} />
         <GmailCard connection={gmailConnection ?? null} />
         <HubSpotCard connection={hubspotConnection ?? null} />
+      </section>
+
+      {/* ── MORE TOOLS ───────────────────────────────────────────── */}
+      <section className="space-y-4 mb-10">
+        <div>
+          <h2 className="text-sm font-semibold flex items-center gap-2">
+            More tools
+            {advancedConnected && (
+              <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-600 dark:text-green-400">
+                Connected
+              </span>
+            )}
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Meeting notes, wikis, and manual uploads</p>
+        </div>
         <GranolaCard connection={granolaConnection ?? null} />
         <NotionCard connection={notionConnection ? {
           ...notionConnection,
           config: (notionConnection.config ?? {}) as { workspace_id?: string; owner_name?: string | null; owner_email?: string | null },
         } : null} />
         <ManualImport />
-      </div>
+      </section>
 
-      <div className="mt-10 mb-6">
-        <h2 className="text-base font-semibold mb-0.5">Publishing channels</h2>
-        <p className="text-xs text-muted-foreground">
-          Connect channels to publish content directly from the Content editor.
-        </p>
-      </div>
-
-      <div className="space-y-4">
+      {/* ── PUBLISHING CHANNELS ──────────────────────────────────── */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-sm font-semibold">Publishing channels</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Connect channels to publish content directly from the Content editor.
+          </p>
+        </div>
         <LinkedInCard connection={linkedInConnection ?? null} />
         <EmailCard
           configured={!!wsSettings.resend_api_key}
           fromName={wsSettings.resend_from_name}
           fromEmail={wsSettings.resend_from_email}
         />
-      </div>
+      </section>
     </div>
   )
 }

@@ -77,7 +77,7 @@ export default async function AnalyticsPage() {
   const workspaceId = workspace?.id
 
   if (!workspaceId) {
-    return <div className="p-8 text-sm text-muted-foreground">No workspace found.</div>
+    return <div className="p-4 sm:p-8 text-sm text-muted-foreground">No workspace found.</div>
   }
 
   const [
@@ -117,7 +117,7 @@ export default async function AnalyticsPage() {
   const orderedSignals  = Object.keys(SIGNAL_LABELS).filter(k => signalsByType[k] > 0)
 
   return (
-    <div className="p-8 max-w-3xl space-y-10">
+    <div className="p-4 sm:p-8 max-w-3xl space-y-10">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight mb-1">Analytics</h1>
         <p className="text-muted-foreground text-sm">

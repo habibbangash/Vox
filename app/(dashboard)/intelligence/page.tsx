@@ -26,7 +26,7 @@ export default async function IntelligencePage() {
   const orderedTypes = ['person', 'company', 'topic', 'theme', 'objection', 'buying_signal', 'product', 'competitor', 'other']
 
   return (
-    <div className="p-8 max-w-3xl space-y-10">
+    <div className="p-4 sm:p-8 max-w-3xl space-y-10">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight mb-1">Intelligence</h1>
         <p className="text-muted-foreground text-sm">
