@@ -138,3 +138,48 @@ export async function getRecentDocuments(): Promise<RecentResult> {
     unprocessed: unprocessed ?? 0,
   }
 }
+
+export interface TopEntity {
+  id:             string
+  type:           string
+  canonical_name: string
+  mention_count:  number
+}
+
+export async function getTopEntities(limit = 30): Promise<TopEntity[]> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const workspaceId = await getWorkspaceId(user.id)
+  if (!workspaceId) return []
+
+  // Aggregate mention counts per entity in one query
+  const { data } = await adminClient
+    .from('entity_mentions')
+    .select('entity_id, entities!inner(id, type, canonical_name)')
+    .eq('workspace_id', workspaceId)
+
+  if (!data || data.length === 0) return []
+
+  const counts: Record<string, { entity: { id: string; type: string; canonical_name: string }; count: number }> = {}
+
+  for (const row of data) {
+    const entity = row.entities as unknown as { id: string; type: string; canonical_name: string }
+    if (!entity) continue
+    if (!counts[entity.id]) {
+      counts[entity.id] = { entity, count: 0 }
+    }
+    counts[entity.id].count++
+  }
+
+  return Object.values(counts)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit)
+    .map(({ entity, count }) => ({
+      id: entity.id,
+      type: entity.type,
+      canonical_name: entity.canonical_name,
+      mention_count: count,
+    }))
+}

@@ -5,21 +5,12 @@ import { Input } from '@/components/ui/input'
 import { searchDocuments, type DocumentResult, type RecentResult } from '@/app/actions/intelligence'
 
 const SOURCE_CONFIG: Record<string, { label: string; icon: React.ReactNode; style: string }> = {
-  krisp: {
-    label: 'Meeting',
-    icon: <Mic className="size-3" />,
-    style: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
-  },
-  rss: {
-    label: 'Article',
-    icon: <Rss className="size-3" />,
-    style: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-  },
-  granola: {
-    label: 'Note',
-    icon: <Mic className="size-3" />,
-    style: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-  },
+  krisp:   { label: 'Meeting', icon: <Mic className="size-3" />, style: 'bg-violet-500/10 text-violet-600 dark:text-violet-400'  },
+  rss:     { label: 'Article', icon: <Rss className="size-3" />, style: 'bg-blue-500/10 text-blue-600 dark:text-blue-400'        },
+  granola: { label: 'Note',    icon: <Mic className="size-3" />, style: 'bg-amber-500/10 text-amber-600 dark:text-amber-400'     },
+  slack:   { label: 'Slack',   icon: <Search className="size-3" />, style: 'bg-green-500/10 text-green-600 dark:text-green-400'  },
+  gmail:   { label: 'Gmail',   icon: <Search className="size-3" />, style: 'bg-red-500/10 text-red-600 dark:text-red-400'        },
+  hubspot: { label: 'HubSpot', icon: <Search className="size-3" />, style: 'bg-orange-500/10 text-orange-600 dark:text-orange-400'},
 }
 
 function SourceBadge({ type }: { type: string }) {
