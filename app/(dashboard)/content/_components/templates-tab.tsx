@@ -29,7 +29,7 @@ const TEMPLATES: Template[] = [
     description: '3-touch sequence: problem hook → proof from customer voice → clear CTA.',
     strategy:    'Extracts objections and pain points from transcripts to write outbound that resonates.',
     icon:        <Mail className="size-4" />,
-    available:   false,
+    available:   true,
   },
   {
     id:          'blog_post',
@@ -38,7 +38,7 @@ const TEMPLATES: Template[] = [
     description: 'Long-form article with evidence pulled from multiple source documents.',
     strategy:    'Clusters related topics across sources to build a well-evidenced narrative.',
     icon:        <BookOpen className="size-4" />,
-    available:   false,
+    available:   true,
   },
   {
     id:          'battle_card',
@@ -47,7 +47,7 @@ const TEMPLATES: Template[] = [
     description: 'Objection handler and competitive positioning sheet for your sales team.',
     strategy:    'Extracts recurring objections from transcripts and builds structured responses.',
     icon:        <Shield className="size-4" />,
-    available:   false,
+    available:   true,
   },
 ]
 
