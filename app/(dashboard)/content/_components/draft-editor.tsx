@@ -1,6 +1,6 @@
 'use client'
 import { useState, useTransition, useEffect } from 'react'
-import { ChevronDown, ChevronUp, Trash2, Sparkles, Loader2, Search, X, Check, Plus } from 'lucide-react'
+import { ChevronDown, ChevronUp, Clipboard, ClipboardCheck, Trash2, Loader2, Search, X, Check, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -83,8 +83,18 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false }: 
     })
   }, [expanded, sourcesLoaded, draft.id])
 
+  const [copied, setCopied] = useState(false)
+
   const charCount = body.length
   const LINKEDIN_MAX = 3000
+
+  function handleCopy() {
+    if (!body) return
+    navigator.clipboard.writeText(body).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
 
   function save() {
     startSave(async () => {
@@ -301,30 +311,30 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false }: 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label className="text-xs">Content</Label>
-              {draft.format === 'linkedin_post' && (
-                <span className={`text-xs ${charCount > LINKEDIN_MAX ? 'text-destructive' : 'text-muted-foreground'}`}>
-                  {charCount} / {LINKEDIN_MAX}
-                </span>
-              )}
+              <div className="flex items-center gap-3">
+                {draft.format === 'linkedin_post' && (
+                  <span className={`text-xs ${charCount > LINKEDIN_MAX ? 'text-destructive' : 'text-muted-foreground'}`}>
+                    {charCount.toLocaleString()} / {LINKEDIN_MAX.toLocaleString()}
+                  </span>
+                )}
+                {body && (
+                  <button
+                    onClick={handleCopy}
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {copied
+                      ? <><ClipboardCheck className="size-3.5 text-green-500" /> Copied</>
+                      : <><Clipboard className="size-3.5" /> Copy</>}
+                  </button>
+                )}
+              </div>
             </div>
             <Textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Write your content here…"
+              placeholder="Write your content here, or generate from a Signal in the Signals tab…"
               className="min-h-36 text-sm resize-none"
             />
-          </div>
-
-          {/* Generation stub */}
-          <div className="rounded-lg border border-dashed p-3 flex items-start gap-2.5">
-            <Sparkles className="size-4 text-muted-foreground mt-0.5 shrink-0" />
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">AI generation</p>
-              <p className="text-xs text-muted-foreground/80 mt-0.5">
-                Will generate a {FORMAT_LABELS[draft.format]} from your brief and evidence once the extraction
-                pipeline is live. Add an <code className="bg-muted rounded px-1">ANTHROPIC_API_KEY</code> to unlock.
-              </p>
-            </div>
           </div>
 
           {/* Save / delete */}
