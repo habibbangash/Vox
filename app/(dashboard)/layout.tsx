@@ -9,6 +9,7 @@ const navItems = [
   { href: '/sources',      label: 'Sources',      icon: '⟡' },
   { href: '/intelligence', label: 'Intelligence', icon: '◈' },
   { href: '/content',      label: 'Content',      icon: '⊞' },
+  { href: '/analytics',    label: 'Analytics',    icon: '▲' },
   { href: '/settings',     label: 'Settings',     icon: '⚙' },
 ]
 

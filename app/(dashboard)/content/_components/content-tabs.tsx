@@ -4,13 +4,17 @@ import { type ContentDraft, type Signal } from '@/app/actions/content'
 import { SignalsTab } from './signals-tab'
 import { DraftsTab } from './drafts-tab'
 import { TemplatesTab } from './templates-tab'
+import { PublishedTab } from './published-tab'
+import { CalendarTab } from './calendar-tab'
 
-type Tab = 'signals' | 'drafts' | 'templates'
+type Tab = 'signals' | 'drafts' | 'templates' | 'published' | 'calendar'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'signals',   label: 'Signals'   },
   { id: 'drafts',    label: 'Drafts'    },
   { id: 'templates', label: 'Templates' },
+  { id: 'published', label: 'Published' },
+  { id: 'calendar',  label: 'Calendar'  },
 ]
 
 interface ContentTabsProps {
@@ -71,6 +75,8 @@ export function ContentTabs({ drafts, signals, linkedInConnected = false, emailC
         />
       )}
       {activeTab === 'templates' && <TemplatesTab onSelectTemplate={handleSelectTemplate} />}
+      {activeTab === 'published' && <PublishedTab drafts={drafts} />}
+      {activeTab === 'calendar'  && <CalendarTab  drafts={drafts} />}
     </div>
   )
 }
