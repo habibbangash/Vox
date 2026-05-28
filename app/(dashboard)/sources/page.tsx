@@ -12,8 +12,17 @@ import { LinkedInCard } from './_components/linkedin-card'
 import { EmailCard } from './_components/email-card'
 import { ManualImport } from './_components/manual-import'
 import { SourceHealthBanner, type HealthConnection } from './_components/source-health-banner'
+import { SetupWizard } from './_components/setup-wizard'
 
-export default async function SourcesPage() {
+const OAUTH_SOURCES = ['slack', 'gmail', 'hubspot', 'granola', 'notion', 'linkedin'] as const
+
+export default async function SourcesPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string>>
+}) {
+  const params = await searchParams
+  const justConnected = OAUTH_SOURCES.find(s => params[s] === 'connected') ?? null
   const { user } = await verifySession()
 
   const [
@@ -82,6 +91,17 @@ export default async function SourcesPage() {
     !krispConnection && !slackConnection && !gmailConnection &&
     !hubspotConnection && !granolaConnection && !notionConnection && (rssConnections ?? []).length === 0
 
+  const connectedSources: string[] = [
+    krispConnection   && 'krisp',
+    slackConnection   && 'slack',
+    gmailConnection   && 'gmail',
+    hubspotConnection && 'hubspot',
+    granolaConnection && 'granola',
+    notionConnection  && 'notion',
+    linkedInConnection && 'linkedin',
+    ...((rssConnections ?? []).length > 0 ? ['rss'] : []),
+  ].filter(Boolean) as string[]
+
   const healthConnections: HealthConnection[] = [
     krispConnection   && { id: krispConnection.id,   source_type: 'krisp',   display_name: null,                          error_message: (krispConnection as { error_message?: string | null }).error_message ?? null, last_synced_at: krispConnection.last_synced_at ?? null },
     slackConnection   && { id: slackConnection.id,   source_type: 'slack',   display_name: slackConnection.display_name ?? null,   error_message: slackConnection.error_message ?? null,   last_synced_at: slackConnection.last_synced_at ?? null },
@@ -98,7 +118,10 @@ export default async function SourcesPage() {
 
   return (
     <div className="p-4 sm:p-8 max-w-4xl">
-      <h1 className="text-2xl font-semibold tracking-tight mb-1">Sources</h1>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Sources</h1>
+        <SetupWizard justConnected={justConnected} connectedSources={connectedSources} />
+      </div>
       <p className="text-muted-foreground text-sm mb-6">
         Connect your meeting tools and content feeds to automatically ingest data into your workspace.
       </p>
