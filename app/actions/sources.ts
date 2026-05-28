@@ -11,6 +11,10 @@ import {
   fetchAllContacts, fetchAllDeals, fetchAllNotes, fetchAllCalls,
   contactToDocument, dealToDocument, noteToDocument, callToDocument,
 } from '@/lib/sources/hubspot'
+import {
+  refreshGranolaToken,
+  listMeetingIds, getMeetingsWithSummary, meetingToDocument,
+} from '@/lib/sources/granola'
 
 export type SourceActionState = { error?: string; success?: boolean; synced?: number } | undefined
 
@@ -525,6 +529,80 @@ export async function syncHubSpot(connectionId: string): Promise<SourceActionSta
   }
 }
 
+export async function syncGranola(connectionId: string): Promise<SourceActionState> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: connection } = await adminClient
+    .from('source_connections')
+    .select('id, workspace_id, user_id')
+    .eq('id', connectionId)
+    .single()
+
+  if (!connection || connection.user_id !== user.id) return { error: 'Not found' }
+
+  const { data: creds } = await adminClient
+    .from('source_credentials')
+    .select('access_token, refresh_token, expires_at')
+    .eq('connection_id', connectionId)
+    .single()
+
+  if (!creds?.access_token) return { error: 'No credentials found' }
+
+  let accessToken = creds.access_token
+  if (creds.expires_at && new Date(creds.expires_at).getTime() - Date.now() < 60_000) {
+    const origin = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+    const refreshed = await refreshGranolaToken(creds.refresh_token ?? '', `${origin}/api/oauth/granola/metadata`)
+    if (!refreshed) return { error: 'Could not refresh Granola token' }
+    accessToken = refreshed.access_token
+    await adminClient
+      .from('source_credentials')
+      .update({
+        access_token: refreshed.access_token,
+        refresh_token: refreshed.refresh_token ?? creds.refresh_token,
+        ...(refreshed.expires_in ? { expires_at: new Date(Date.now() + refreshed.expires_in * 1000).toISOString() } : {}),
+      })
+      .eq('connection_id', connectionId)
+  }
+
+  await adminClient.from('source_connections').update({ status: 'syncing' }).eq('id', connectionId)
+
+  try {
+    const meetingMeta = await listMeetingIds(accessToken)
+    const ids = meetingMeta.map(m => m.id)
+    const meetings = await getMeetingsWithSummary(accessToken, ids)
+    const docs = meetings
+      .filter(m => m.summary)
+      .map(m => meetingToDocument(m, connection.workspace_id, connectionId))
+
+    if (docs.length > 0) {
+      await adminClient
+        .from('source_documents')
+        .upsert(docs, { onConflict: 'workspace_id,source_type,external_id' })
+    }
+
+    const { count } = await adminClient
+      .from('source_documents')
+      .select('*', { count: 'exact', head: true })
+      .eq('connection_id', connectionId)
+
+    await adminClient
+      .from('source_connections')
+      .update({ status: 'active', last_synced_at: new Date().toISOString(), synced_count: count ?? 0, error_message: null })
+      .eq('id', connectionId)
+
+    revalidatePath('/sources')
+    return { success: true, synced: count ?? 0 }
+  } catch (err) {
+    await adminClient
+      .from('source_connections')
+      .update({ status: 'error', error_message: err instanceof Error ? err.message : 'Sync failed' })
+      .eq('id', connectionId)
+    return { error: err instanceof Error ? err.message : 'Sync failed' }
+  }
+}
+
 // ─── Internal sync (no user auth — used by cron) ──────────────────────────────
 
 export async function syncConnectionInternal(connectionId: string): Promise<{ synced?: number; error?: string }> {
@@ -646,6 +724,43 @@ export async function syncConnectionInternal(connectionId: string): Promise<{ sy
         ...notes.map((n) => noteToDocument(n, connection.workspace_id, connectionId)),
         ...calls.map((c) => callToDocument(c, connection.workspace_id, connectionId)),
       ]
+      if (docs.length > 0) await adminClient.from('source_documents').upsert(docs, { onConflict: 'workspace_id,source_type,external_id' })
+      const { count } = await adminClient.from('source_documents').select('*', { count: 'exact', head: true }).eq('connection_id', connectionId)
+      await adminClient.from('source_connections').update({ status: 'active', last_synced_at: new Date().toISOString(), synced_count: count ?? 0, error_message: null }).eq('id', connectionId)
+      return { synced: count ?? 0 }
+    } catch (err) {
+      await adminClient.from('source_connections').update({ status: 'error', error_message: err instanceof Error ? err.message : 'Sync failed' }).eq('id', connectionId)
+      return { error: err instanceof Error ? err.message : 'Sync failed' }
+    }
+  }
+
+  if (source_type === 'granola') {
+    const { data: creds } = await adminClient
+      .from('source_credentials')
+      .select('access_token, refresh_token, expires_at')
+      .eq('connection_id', connectionId)
+      .single()
+    if (!creds?.access_token) return { error: 'No Granola token' }
+    let accessToken = creds.access_token
+    if (creds.expires_at && new Date(creds.expires_at).getTime() - Date.now() < 60_000) {
+      const origin = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+      const refreshed = await refreshGranolaToken(creds.refresh_token ?? '', `${origin}/api/oauth/granola/metadata`)
+      if (!refreshed) return { error: 'Could not refresh Granola token' }
+      accessToken = refreshed.access_token
+      await adminClient.from('source_credentials').update({
+        access_token: refreshed.access_token,
+        refresh_token: refreshed.refresh_token ?? creds.refresh_token,
+        ...(refreshed.expires_in ? { expires_at: new Date(Date.now() + refreshed.expires_in * 1000).toISOString() } : {}),
+      }).eq('connection_id', connectionId)
+    }
+    await adminClient.from('source_connections').update({ status: 'syncing' }).eq('id', connectionId)
+    try {
+      const meetingMeta = await listMeetingIds(accessToken)
+      const ids = meetingMeta.map(m => m.id)
+      const meetings = await getMeetingsWithSummary(accessToken, ids)
+      const docs = meetings
+        .filter(m => m.summary)
+        .map(m => meetingToDocument(m, connection.workspace_id, connectionId))
       if (docs.length > 0) await adminClient.from('source_documents').upsert(docs, { onConflict: 'workspace_id,source_type,external_id' })
       const { count } = await adminClient.from('source_documents').select('*', { count: 'exact', head: true }).eq('connection_id', connectionId)
       await adminClient.from('source_connections').update({ status: 'active', last_synced_at: new Date().toISOString(), synced_count: count ?? 0, error_message: null }).eq('id', connectionId)

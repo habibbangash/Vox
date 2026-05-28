@@ -5,6 +5,7 @@ import { RssSection } from './_components/rss-section'
 import { SlackCard } from './_components/slack-card'
 import { GmailCard } from './_components/gmail-card'
 import { HubSpotCard } from './_components/hubspot-card'
+import { GranolaCard } from './_components/granola-card'
 import { LinkedInCard } from './_components/linkedin-card'
 import { ManualImport } from './_components/manual-import'
 
@@ -18,6 +19,7 @@ export default async function SourcesPage() {
     { data: gmailConnection },
     { data: hubspotConnection },
     { data: linkedInConnection },
+    { data: granolaConnection },
   ] = await Promise.all([
     adminClient
       .from('source_connections')
@@ -55,6 +57,12 @@ export default async function SourcesPage() {
       .eq('user_id', user.id)
       .eq('source_type', 'linkedin')
       .single(),
+    adminClient
+      .from('source_connections')
+      .select('id, display_name, status, last_synced_at, synced_count, error_message')
+      .eq('user_id', user.id)
+      .eq('source_type', 'granola')
+      .single(),
   ])
 
   return (
@@ -70,6 +78,7 @@ export default async function SourcesPage() {
         <SlackCard connection={slackConnection ?? null} />
         <GmailCard connection={gmailConnection ?? null} />
         <HubSpotCard connection={hubspotConnection ?? null} />
+        <GranolaCard connection={granolaConnection ?? null} />
         <ManualImport />
       </div>
 
