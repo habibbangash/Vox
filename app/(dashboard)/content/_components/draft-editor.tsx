@@ -1,12 +1,13 @@
 'use client'
 import { useState, useTransition, useEffect, useRef } from 'react'
-import { ChevronDown, ChevronUp, Clipboard, ClipboardCheck, Sparkles, Trash2, Loader2, Search, X, Check, Plus } from 'lucide-react'
+import { ChevronDown, ChevronUp, Clipboard, ClipboardCheck, Sparkles, Trash2, Loader2, Search, X, Check, Plus, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { updateDraft, deleteDraft, addDraftSource, removeDraftSource, getDraftSources, generateDraftBody, type ContentDraft } from '@/app/actions/content'
 import { searchDocuments, type DocumentResult } from '@/app/actions/intelligence'
+import { publishDraftToLinkedIn } from '@/app/actions/publish'
 
 const STATUS_OPTIONS = ['brief', 'draft', 'review', 'published'] as const
 const STATUS_STYLE: Record<string, string> = {
@@ -53,12 +54,13 @@ interface LinkedSource {
 }
 
 interface DraftEditorProps {
-  draft:           ContentDraft
-  initialSources:  LinkedSource[]
-  defaultExpanded?: boolean
+  draft:             ContentDraft
+  initialSources:    LinkedSource[]
+  defaultExpanded?:  boolean
+  linkedInConnected?: boolean
 }
 
-export function DraftEditor({ draft, initialSources, defaultExpanded = false }: DraftEditorProps) {
+export function DraftEditor({ draft, initialSources, defaultExpanded = false, linkedInConnected = false }: DraftEditorProps) {
   const [expanded, setExpanded] = useState(defaultExpanded)
   const [title,    setTitle]    = useState(draft.title)
   const [body,     setBody]     = useState(draft.body ?? '')
@@ -75,6 +77,9 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false }: 
   const [isDeleting,      startDelete]        = useTransition()
   const [isGenerating,    setIsGenerating]    = useState(false)
   const [generateError,   setGenerateError]   = useState<string | null>(null)
+  const [isPublishing,    setIsPublishing]    = useState(false)
+  const [publishError,    setPublishError]    = useState<string | null>(null)
+  const [publishSuccess,  setPublishSuccess]  = useState(false)
 
   // Load persisted sources the first time the editor is expanded
   useEffect(() => {
@@ -129,6 +134,19 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false }: 
       setGenerateError(result.error)
     } else if (result.body) {
       setBody(result.body)
+    }
+  }
+
+  async function handlePublish() {
+    setIsPublishing(true)
+    setPublishError(null)
+    const result = await publishDraftToLinkedIn(draft.id)
+    setIsPublishing(false)
+    if (result.error) {
+      setPublishError(result.error)
+    } else {
+      setPublishSuccess(true)
+      setStatus('published')
     }
   }
 
@@ -385,6 +403,16 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false }: 
             />
           </div>
 
+          {/* Publish errors */}
+          {publishError && (
+            <p className="text-xs text-destructive rounded bg-destructive/10 px-2 py-1">{publishError}</p>
+          )}
+          {publishSuccess && (
+            <p className="text-xs text-green-600 rounded bg-green-500/10 px-2 py-1 flex items-center gap-1">
+              <Check className="size-3" /> Published to LinkedIn
+            </p>
+          )}
+
           {/* Save / delete */}
           <div className="flex items-center justify-between pt-1">
             <button
@@ -407,6 +435,20 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false }: 
                 <span className="text-xs text-green-500 flex items-center gap-1">
                   <Check className="size-3" /> Saved
                 </span>
+              )}
+              {draft.format === 'linkedin_post' && body && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handlePublish}
+                  disabled={isPublishing || !linkedInConnected}
+                  title={!linkedInConnected ? 'Connect LinkedIn in Sources first' : 'Publish to LinkedIn'}
+                >
+                  {isPublishing
+                    ? <Loader2 className="size-3.5 animate-spin mr-1" />
+                    : <Send className="size-3.5 mr-1" />}
+                  {linkedInConnected ? 'Publish' : 'Connect LinkedIn'}
+                </Button>
               )}
               <Button size="sm" onClick={save} disabled={isSaving} variant="outline">
                 Save

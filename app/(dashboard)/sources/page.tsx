@@ -5,6 +5,7 @@ import { RssSection } from './_components/rss-section'
 import { SlackCard } from './_components/slack-card'
 import { GmailCard } from './_components/gmail-card'
 import { HubSpotCard } from './_components/hubspot-card'
+import { LinkedInCard } from './_components/linkedin-card'
 
 export default async function SourcesPage() {
   const { user } = await verifySession()
@@ -15,6 +16,7 @@ export default async function SourcesPage() {
     { data: slackConnection },
     { data: gmailConnection },
     { data: hubspotConnection },
+    { data: linkedInConnection },
   ] = await Promise.all([
     adminClient
       .from('source_connections')
@@ -46,6 +48,12 @@ export default async function SourcesPage() {
       .eq('user_id', user.id)
       .eq('source_type', 'hubspot')
       .single(),
+    adminClient
+      .from('source_connections')
+      .select('id, display_name, status, config')
+      .eq('user_id', user.id)
+      .eq('source_type', 'linkedin')
+      .single(),
   ])
 
   return (
@@ -61,6 +69,17 @@ export default async function SourcesPage() {
         <SlackCard connection={slackConnection ?? null} />
         <GmailCard connection={gmailConnection ?? null} />
         <HubSpotCard connection={hubspotConnection ?? null} />
+      </div>
+
+      <div className="mt-10 mb-6">
+        <h2 className="text-base font-semibold mb-0.5">Publishing channels</h2>
+        <p className="text-xs text-muted-foreground">
+          Connect channels to publish content directly from the Content editor.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <LinkedInCard connection={linkedInConnection ?? null} />
       </div>
     </div>
   )
