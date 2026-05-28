@@ -1,7 +1,7 @@
 'use client'
 import { useState, useTransition } from 'react'
-import { AlertCircle, Loader2, RefreshCw, Sparkles, TrendingUp, Zap, Swords, X } from 'lucide-react'
-import { type Signal, type SignalType, type ContentFormat, computeSignals, generateDraftFromSignal, dismissSignal } from '@/app/actions/content'
+import { AlertCircle, Loader2, RefreshCw, Sparkles, Star, TrendingUp, Zap, Swords, X } from 'lucide-react'
+import { type Signal, type SignalType, type ContentFormat, computeSignals, generateDraftFromSignal, dismissSignal, pinSignal } from '@/app/actions/content'
 import { useRouter } from 'next/navigation'
 
 const SIGNAL_META: Record<SignalType, { label: string; icon: React.ComponentType<{ className?: string }>; chip: string }> = {
@@ -31,8 +31,17 @@ export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
   const [genError, setGenError] = useState<string | null>(null)
   const [activeFilter, setActiveFilter] = useState<SignalType | 'all'>('all')
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set())
+  const [pinnedIds, setPinnedIds] = useState<Set<string>>(
+    new Set(signals.filter(s => s.pinned_at).map(s => s.id))
+  )
 
-  const visible = signals.filter(s => !dismissedIds.has(s.id))
+  const visible = signals
+    .filter(s => !dismissedIds.has(s.id))
+    .sort((a, b) => {
+      const aPinned = pinnedIds.has(a.id) ? 0 : 1
+      const bPinned = pinnedIds.has(b.id) ? 0 : 1
+      return aPinned - bPinned
+    })
   const filtered = activeFilter === 'all'
     ? visible
     : visible.filter(s => s.signal_type === activeFilter)
@@ -40,6 +49,16 @@ export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
   async function handleDismiss(signalId: string) {
     setDismissedIds(prev => new Set([...prev, signalId]))
     await dismissSignal(signalId)
+  }
+
+  async function handlePin(signalId: string) {
+    const nowPinned = !pinnedIds.has(signalId)
+    setPinnedIds(prev => {
+      const next = new Set(prev)
+      nowPinned ? next.add(signalId) : next.delete(signalId)
+      return next
+    })
+    await pinSignal(signalId, nowPinned)
   }
 
   function handleRefresh() {
@@ -144,6 +163,13 @@ export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
                       <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5">
                         {signal.source_count} source{signal.source_count !== 1 ? 's' : ''}
                       </span>
+                      <button
+                        onClick={() => handlePin(signal.id)}
+                        title={pinnedIds.has(signal.id) ? 'Unpin' : 'Pin'}
+                        className={`transition-colors ${pinnedIds.has(signal.id) ? 'text-amber-500 hover:text-amber-600' : 'text-muted-foreground hover:text-foreground'}`}
+                      >
+                        <Star className={`size-3.5 ${pinnedIds.has(signal.id) ? 'fill-current' : ''}`} />
+                      </button>
                       <button
                         onClick={() => handleDismiss(signal.id)}
                         title="Dismiss signal"

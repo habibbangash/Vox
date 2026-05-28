@@ -68,6 +68,7 @@ export interface Signal {
   time_window:    string
   computed_at:    string
   dismissed_at:   string | null
+  pinned_at:      string | null
 }
 
 export type ContentActionState = { error?: string; success?: boolean; draftId?: string } | undefined
@@ -288,6 +289,21 @@ export async function dismissSignal(signalId: string): Promise<{ error?: string 
     .eq('workspace_id', result.workspaceId)
 
   if (error) return { error: error.message }
+  return {}
+}
+
+export async function pinSignal(signalId: string, pin: boolean): Promise<{ error?: string }> {
+  const result = await requireWorkspace()
+  if ('error' in result) return { error: result.error }
+
+  const { error } = await adminClient
+    .from('signals')
+    .update({ pinned_at: pin ? new Date().toISOString() : null })
+    .eq('id', signalId)
+    .eq('workspace_id', result.workspaceId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/content')
   return {}
 }
 
