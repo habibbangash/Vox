@@ -99,6 +99,24 @@ export async function saveAnthropicKey(
   return {}
 }
 
+export async function testAnthropicKey(
+  key: string
+): Promise<{ valid: boolean; error?: string }> {
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/models', {
+      headers: {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+      },
+    })
+    if (res.status === 401) return { valid: false, error: 'Invalid API key — double-check it on console.anthropic.com' }
+    if (!res.ok)            return { valid: false, error: `Anthropic returned ${res.status}` }
+    return { valid: true }
+  } catch {
+    return { valid: false, error: 'Could not reach Anthropic — check your connection' }
+  }
+}
+
 export async function removeAnthropicKey(): Promise<{ error?: string }> {
   const result = await requireOwner()
   if ('error' in result) return { error: result.error }

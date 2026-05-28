@@ -1,32 +1,40 @@
 'use client'
 import { useState, useTransition } from 'react'
-import { Eye, EyeOff, Check, Trash2, Loader2, KeyRound } from 'lucide-react'
+import { Eye, EyeOff, Check, Trash2, Loader2, KeyRound, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { saveAnthropicKey, removeAnthropicKey } from '@/app/actions/workspace'
+import { saveAnthropicKey, removeAnthropicKey, testAnthropicKey } from '@/app/actions/workspace'
 
 interface ApiKeyFormProps {
   hasKey: boolean
 }
 
+type KeyStatus = 'idle' | 'testing' | 'valid' | 'invalid'
+
 export function ApiKeyForm({ hasKey }: ApiKeyFormProps) {
-  const [keyValue,  setKeyValue]  = useState('')
-  const [revealed,  setRevealed]  = useState(false)
-  const [saved,     setSaved]     = useState(false)
-  const [error,     setError]     = useState<string | null>(null)
-  const [isSaving,  startSave]    = useTransition()
-  const [isRemoving, startRemove] = useTransition()
+  const [keyValue,   setKeyValue]   = useState('')
+  const [revealed,   setRevealed]   = useState(false)
+  const [saved,      setSaved]      = useState(false)
+  const [error,      setError]      = useState<string | null>(null)
+  const [keyStatus,  setKeyStatus]  = useState<KeyStatus>('idle')
+  const [isSaving,   startSave]     = useTransition()
+  const [isRemoving, startRemove]   = useTransition()
 
   async function handleSave() {
     setError(null)
+    setKeyStatus('idle')
     startSave(async () => {
       const result = await saveAnthropicKey(keyValue)
       if (result.error) {
         setError(result.error)
       } else {
-        setKeyValue('')
         setSaved(true)
+        setKeyStatus('testing')
+        const validation = await testAnthropicKey(keyValue)
+        setKeyValue('')
+        setKeyStatus(validation.valid ? 'valid' : 'invalid')
+        if (!validation.valid) setError(validation.error ?? 'Key saved but could not be verified')
         setTimeout(() => setSaved(false), 3000)
       }
     })
@@ -46,9 +54,24 @@ export function ApiKeyForm({ hasKey }: ApiKeyFormProps) {
       {hasKey && !saved ? (
         <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
           <div className="flex items-center gap-2.5 text-sm">
-            <KeyRound className="size-4 text-green-500 shrink-0" />
+            <KeyRound className={`size-4 shrink-0 ${keyStatus === 'valid' ? 'text-green-500' : keyStatus === 'invalid' ? 'text-destructive' : 'text-green-500'}`} />
             <span className="text-muted-foreground">Workspace key set</span>
             <span className="font-mono text-xs text-muted-foreground/60">sk-ant-···</span>
+            {keyStatus === 'testing' && (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Loader2 className="size-3 animate-spin" /> Verifying…
+              </span>
+            )}
+            {keyStatus === 'valid' && (
+              <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                <Check className="size-3" /> Valid
+              </span>
+            )}
+            {keyStatus === 'invalid' && (
+              <span className="flex items-center gap-1 text-xs text-destructive">
+                <X className="size-3" /> Invalid key
+              </span>
+            )}
           </div>
           <button
             onClick={handleRemove}
@@ -63,8 +86,10 @@ export function ApiKeyForm({ hasKey }: ApiKeyFormProps) {
         </div>
       ) : saved ? (
         <div className="flex items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/5 px-4 py-3 text-sm text-green-600">
-          <Check className="size-4 shrink-0" />
-          API key saved successfully.
+          {keyStatus === 'testing'
+            ? <Loader2 className="size-4 shrink-0 animate-spin" />
+            : <Check className="size-4 shrink-0" />}
+          {keyStatus === 'testing' ? 'Key saved — verifying with Anthropic…' : 'API key saved and verified.'}
         </div>
       ) : null}
 

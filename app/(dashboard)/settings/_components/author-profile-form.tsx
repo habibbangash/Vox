@@ -1,11 +1,26 @@
 'use client'
-import { useActionState } from 'react'
-import { Loader2, Check } from 'lucide-react'
+import { useActionState, useState } from 'react'
+import { ChevronDown, ChevronUp, Loader2, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { upsertAuthorProfile, type AuthorProfile, type ContentActionState } from '@/app/actions/content'
+
+const EXAMPLES = [
+  {
+    label: 'Founder / exec',
+    text:  `Direct, first-person voice. No jargon or buzzwords.\nShort sentences. Lead with the insight, then explain.\nConversational but credible — like talking to a smart peer.\nAvoid: "leverage", "synergy", "circle back", "deep dive".`,
+  },
+  {
+    label: 'Technical / product',
+    text:  `Precise and specific. Use real numbers and examples.\nExplain the "why", not just the "what".\nOkay to use technical terms if the audience knows them.\nAvoid corporate-speak and vague superlatives.`,
+  },
+  {
+    label: 'Sales / revenue',
+    text:  `Outcome-focused. Start with the problem, then the result.\nUse social proof and specific customer language.\nBold claims backed by evidence — no fluff.\nConversational CTAs. Avoid passive voice.`,
+  },
+]
 
 interface AuthorProfileFormProps {
   profile: AuthorProfile | null
@@ -16,6 +31,7 @@ export function AuthorProfileForm({ profile }: AuthorProfileFormProps) {
     upsertAuthorProfile,
     undefined
   )
+  const [showExamples, setShowExamples] = useState(false)
 
   return (
     <form action={formAction} className="space-y-4">
@@ -46,7 +62,37 @@ export function AuthorProfileForm({ profile }: AuthorProfileFormProps) {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="voice_notes" className="text-xs">Voice notes</Label>
+        <div className="flex items-center justify-between max-w-lg">
+          <Label htmlFor="voice_notes" className="text-xs">Writing style &amp; tone</Label>
+          <button
+            type="button"
+            onClick={() => setShowExamples((v) => !v)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showExamples ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+            {showExamples ? 'Hide examples' : 'See examples'}
+          </button>
+        </div>
+
+        {showExamples && (
+          <div className="grid gap-2 sm:grid-cols-3 max-w-lg mb-1">
+            {EXAMPLES.map((ex) => (
+              <button
+                key={ex.label}
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById('voice_notes') as HTMLTextAreaElement | null
+                  if (el) el.value = ex.text
+                }}
+                className="rounded-lg border px-3 py-2.5 text-left space-y-1 hover:border-primary/50 hover:bg-muted/30 transition-colors"
+              >
+                <p className="text-xs font-medium">{ex.label}</p>
+                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{ex.text}</p>
+              </button>
+            ))}
+          </div>
+        )}
+
         <Textarea
           id="voice_notes"
           name="voice_notes"
@@ -55,7 +101,7 @@ export function AuthorProfileForm({ profile }: AuthorProfileFormProps) {
           className="min-h-28 text-sm resize-none max-w-lg"
         />
         <p className="text-xs text-muted-foreground">
-          The AI uses this as a voice fingerprint when generating content for you.
+          Vox uses this to match your voice when generating content. The more specific, the better.
         </p>
       </div>
 
