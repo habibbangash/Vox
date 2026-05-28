@@ -10,6 +10,7 @@ import { GranolaCard } from './_components/granola-card'
 import { LinkedInCard } from './_components/linkedin-card'
 import { EmailCard } from './_components/email-card'
 import { ManualImport } from './_components/manual-import'
+import { SourceHealthBanner, type HealthConnection } from './_components/source-health-banner'
 
 export default async function SourcesPage() {
   const { user } = await verifySession()
@@ -26,7 +27,7 @@ export default async function SourcesPage() {
   ] = await Promise.all([
     adminClient
       .from('source_connections')
-      .select('id, status, webhook_secret, last_synced_at, synced_count')
+      .select('id, status, webhook_secret, last_synced_at, synced_count, error_message')
       .eq('user_id', user.id)
       .eq('source_type', 'krisp')
       .single(),
@@ -69,12 +70,23 @@ export default async function SourcesPage() {
     getWorkspaceSettings(),
   ])
 
+  const healthConnections: HealthConnection[] = [
+    krispConnection   && { id: krispConnection.id,   source_type: 'krisp',   display_name: null,                          error_message: (krispConnection as { error_message?: string | null }).error_message ?? null, last_synced_at: krispConnection.last_synced_at ?? null },
+    slackConnection   && { id: slackConnection.id,   source_type: 'slack',   display_name: slackConnection.display_name ?? null,   error_message: slackConnection.error_message ?? null,   last_synced_at: slackConnection.last_synced_at ?? null },
+    gmailConnection   && { id: gmailConnection.id,   source_type: 'gmail',   display_name: gmailConnection.display_name ?? null,   error_message: gmailConnection.error_message ?? null,   last_synced_at: gmailConnection.last_synced_at ?? null },
+    hubspotConnection && { id: hubspotConnection.id, source_type: 'hubspot', display_name: hubspotConnection.display_name ?? null, error_message: hubspotConnection.error_message ?? null, last_synced_at: hubspotConnection.last_synced_at ?? null },
+    granolaConnection && { id: granolaConnection.id, source_type: 'granola', display_name: granolaConnection.display_name ?? null, error_message: granolaConnection.error_message ?? null, last_synced_at: granolaConnection.last_synced_at ?? null },
+    ...((rssConnections ?? []).map((c) => ({ id: c.id, source_type: 'rss', display_name: c.display_name ?? null, error_message: c.error_message ?? null, last_synced_at: c.last_synced_at ?? null }))),
+  ].filter(Boolean) as HealthConnection[]
+
   return (
     <div className="p-8 max-w-4xl">
       <h1 className="text-2xl font-semibold tracking-tight mb-1">Sources</h1>
       <p className="text-muted-foreground text-sm mb-8">
         Connect your meeting tools and content feeds to automatically ingest data into your workspace.
       </p>
+
+      <SourceHealthBanner connections={healthConnections} />
 
       <div className="space-y-4">
         <KrispCard connection={krispConnection ?? null} />
