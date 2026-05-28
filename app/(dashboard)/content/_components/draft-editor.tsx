@@ -80,6 +80,7 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false, li
   const [isPublishing,    setIsPublishing]    = useState(false)
   const [publishError,    setPublishError]    = useState<string | null>(null)
   const [publishSuccess,  setPublishSuccess]  = useState(false)
+  const [postUrl,         setPostUrl]         = useState<string | null>(draft.published_url ?? null)
 
   // Load persisted sources the first time the editor is expanded
   useEffect(() => {
@@ -147,6 +148,7 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false, li
     } else {
       setPublishSuccess(true)
       setStatus('published')
+      if (result.postUrl) setPostUrl(result.postUrl)
     }
   }
 
@@ -407,9 +409,20 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false, li
           {publishError && (
             <p className="text-xs text-destructive rounded bg-destructive/10 px-2 py-1">{publishError}</p>
           )}
-          {publishSuccess && (
-            <p className="text-xs text-green-600 rounded bg-green-500/10 px-2 py-1 flex items-center gap-1">
-              <Check className="size-3" /> Published to LinkedIn
+          {(publishSuccess || postUrl) && (
+            <p className="text-xs text-green-600 rounded bg-green-500/10 px-2 py-1 flex items-center gap-1.5">
+              <Check className="size-3 shrink-0" />
+              {publishSuccess ? 'Published to LinkedIn' : 'Published'}
+              {postUrl && (
+                <a
+                  href={postUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-green-700"
+                >
+                  View post
+                </a>
+              )}
             </p>
           )}
 

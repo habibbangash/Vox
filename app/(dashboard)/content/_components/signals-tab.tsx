@@ -82,8 +82,6 @@ export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
             {signals.map((signal) => {
               const meta = SIGNAL_META[signal.signal_type]
               const Icon = meta.icon
-              const liKey = `${signal.id}:linkedin_post`
-              const emKey = `${signal.id}:email_sequence`
               return (
                 <div key={signal.id} className="rounded-lg border bg-card px-4 py-3 space-y-2">
                   <div className="flex items-start justify-between gap-3">
@@ -103,25 +101,33 @@ export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
                   {signal.description && (
                     <p className="text-xs text-muted-foreground pl-6">{signal.description}</p>
                   )}
-                  <div className="pl-6 pt-0.5 flex items-center gap-3">
-                    <Sparkles className="size-3 text-muted-foreground shrink-0" />
-                    <button
-                      onClick={() => handleDraft(signal.id, 'linkedin_post')}
-                      disabled={generating !== null}
-                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50 disabled:no-underline"
-                    >
-                      {generating === liKey && <Loader2 className="size-3 animate-spin" />}
-                      Draft LinkedIn post
-                    </button>
-                    <span className="text-muted-foreground text-xs">·</span>
-                    <button
-                      onClick={() => handleDraft(signal.id, 'email_sequence')}
-                      disabled={generating !== null}
-                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50 disabled:no-underline"
-                    >
-                      {generating === emKey && <Loader2 className="size-3 animate-spin" />}
-                      Draft email
-                    </button>
+                  <div className="pl-6 flex items-center justify-between gap-3 flex-wrap">
+                    <p className="text-xs text-muted-foreground">
+                      {signal.document_count} doc{signal.document_count !== 1 ? 's' : ''} · {signal.source_count} source{signal.source_count !== 1 ? 's' : ''} · {new Date(signal.computed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="size-3 text-muted-foreground shrink-0" />
+                      {(['linkedin_post', 'email_sequence', 'blog_post', 'battle_card'] as ContentFormat[]).map((fmt) => {
+                        const fmtKey = `${signal.id}:${fmt}`
+                        const fmtLabel: Record<ContentFormat, string> = {
+                          linkedin_post:  'LinkedIn',
+                          email_sequence: 'Email',
+                          blog_post:      'Blog',
+                          battle_card:    'Battle card',
+                        }
+                        return (
+                          <button
+                            key={fmt}
+                            onClick={() => handleDraft(signal.id, fmt)}
+                            disabled={generating !== null}
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline disabled:opacity-50 disabled:no-underline"
+                          >
+                            {generating === fmtKey && <Loader2 className="size-3 animate-spin" />}
+                            {fmtLabel[fmt]}
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
               )

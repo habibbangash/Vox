@@ -37,6 +37,8 @@ export interface ContentDraft {
   title:             string
   brief:             Brief
   body:              string | null
+  published_url:     string | null
+  published_at:      string | null
   created_at:        string
   updated_at:        string
 }

@@ -44,7 +44,7 @@ export async function getLinkedInConnection(): Promise<{
 
 export async function publishDraftToLinkedIn(
   draftId: string
-): Promise<{ error?: string; postId?: string }> {
+): Promise<{ error?: string; postId?: string; postUrl?: string }> {
   const result = await requireWorkspace()
   if ('error' in result) return { error: result.error }
 
@@ -94,12 +94,21 @@ export async function publishDraftToLinkedIn(
 
   if (publishResult.error) return { error: publishResult.error }
 
-  // Mark draft as published
+  // Build the public post URL from the URN returned by LinkedIn
+  // x-restli-id format: urn:li:ugcPost:1234567890
+  const postUrl = publishResult.postId
+    ? `https://www.linkedin.com/feed/update/${encodeURIComponent(publishResult.postId)}/`
+    : null
+
   await adminClient
     .from('content_drafts')
-    .update({ status: 'published' })
+    .update({
+      status: 'published',
+      published_url: postUrl,
+      published_at: new Date().toISOString(),
+    })
     .eq('id', draftId)
 
   revalidatePath('/content')
-  return { postId: publishResult.postId }
+  return { postId: publishResult.postId, postUrl: postUrl ?? undefined }
 }
