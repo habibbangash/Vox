@@ -1,4 +1,5 @@
 'use server'
+import Anthropic from '@anthropic-ai/sdk'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
@@ -242,6 +243,122 @@ export async function computeSignals(): Promise<{ error?: string }> {
 
   revalidatePath('/content')
   return {}
+}
+
+// ─── Draft generation from signal ────────────────────────────────────────────
+
+const SIGNAL_PROMPTS: Record<SignalType, (topic: string, format: ContentFormat) => string> = {
+  recurring_topic: (topic, format) => format === 'linkedin_post'
+    ? `Write a LinkedIn post (150–250 words) about "${topic}" based on customer conversations.
+Open with a bold, counterintuitive insight. Weave in customer language naturally. Close with a question or observation that invites comments. Do not name the company or use marketing speak.`
+    : `Write a short cold email (100–150 words) that opens a conversation about "${topic}".
+Use the customer language in the snippets as the hook. One CTA only. No fluff.`,
+
+  objection_trend: (topic, format) => format === 'linkedin_post'
+    ? `Write a LinkedIn post (150–250 words) that directly addresses the objection: "${topic}".
+Acknowledge the concern honestly, reframe it with a surprising insight from real customer conversations, and end with a takeaway. Do not be defensive or salesy.`
+    : `Write a battle-card-style email (100–150 words) that proactively addresses "${topic}" for a prospect who might have this concern. One clear, honest answer. One CTA.`,
+
+  buying_signal: (topic, format) => format === 'linkedin_post'
+    ? `Write a LinkedIn post (150–250 words) capitalising on momentum around "${topic}".
+Reference real customer language to show you understand the trend. Position a point of view. End with a question that invites replies.`
+    : `Write an outreach email (100–150 words) to a prospect who has shown interest in "${topic}".
+Personalise using the customer snippets. One CTA, no pressure.`,
+
+  competitor_mention: (topic, format) => format === 'linkedin_post'
+    ? `Write a LinkedIn post (150–250 words) about the landscape around "${topic}" without naming competitors.
+Use customer language to show you understand what buyers care about when evaluating options. Differentiate through point of view, not feature lists.`
+    : `Write a comparison email (100–150 words) for a prospect evaluating "${topic}".
+Focus on outcomes and customer language, not features. Honest, direct, no FUD.`,
+}
+
+export async function generateDraftFromSignal(
+  signalId: string,
+  format: ContentFormat
+): Promise<ContentActionState & { draftId?: string }> {
+  const result = await requireWorkspace()
+  if ('error' in result) return { error: result.error }
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return { error: 'ANTHROPIC_API_KEY not set — add it to your environment to enable AI drafts.' }
+  }
+
+  // Load signal
+  const { data: signal } = await adminClient
+    .from('signals')
+    .select('*')
+    .eq('id', signalId)
+    .eq('workspace_id', result.workspaceId)
+    .single()
+
+  if (!signal) return { error: 'Signal not found' }
+
+  // Load entity mentions for context (up to 8 snippets)
+  const mentions: { snippet: string; document_id: string }[] = []
+  if (signal.entity_id) {
+    const { data: rows } = await adminClient
+      .from('entity_mentions')
+      .select('snippet, document_id')
+      .eq('entity_id', signal.entity_id)
+      .eq('workspace_id', result.workspaceId)
+      .not('snippet', 'is', null)
+      .order('confidence', { ascending: false })
+      .limit(8)
+
+    if (rows) mentions.push(...rows)
+  }
+
+  const snippetBlock = mentions.length > 0
+    ? `Customer snippets (verbatim):\n${mentions.map((m, i) => `${i + 1}. "${m.snippet}"`).join('\n')}`
+    : `No verbatim snippets available yet — generate based on the topic alone.`
+
+  const userPrompt = SIGNAL_PROMPTS[signal.signal_type as SignalType]?.(signal.title, format)
+    ?? `Write a ${format.replace('_', ' ')} about "${signal.title}" based on the following context.\n${snippetBlock}`
+
+  const systemPrompt = `You are a B2B content strategist writing content for a SaaS company. Your writing sounds like a thoughtful practitioner, not a marketer. Use plain language, avoid corporate jargon, and prioritise customer voice over brand voice.\n\n${snippetBlock}`
+
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+  let body: string
+  try {
+    const message = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 600,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
+    })
+    body = (message.content[0] as { type: string; text: string }).text ?? ''
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Claude API error' }
+  }
+
+  const title = `${signal.title} — ${format === 'linkedin_post' ? 'LinkedIn Post' : format === 'email_sequence' ? 'Email' : format}`
+
+  const { data: draft, error: insertErr } = await adminClient
+    .from('content_drafts')
+    .insert({
+      workspace_id: result.workspaceId,
+      format,
+      title,
+      brief: { topic: signal.title, angle: signal.signal_type },
+      body,
+      status: 'draft',
+    })
+    .select('id')
+    .single()
+
+  if (insertErr || !draft) return { error: insertErr?.message ?? 'Failed to save draft' }
+
+  // Link source documents from mentions
+  const uniqueDocIds = [...new Set(mentions.map((m) => m.document_id))]
+  if (uniqueDocIds.length > 0) {
+    await adminClient.from('content_sources').insert(
+      uniqueDocIds.map((docId) => ({ draft_id: draft.id, document_id: docId }))
+    )
+  }
+
+  revalidatePath('/content')
+  return { success: true, draftId: draft.id }
 }
 
 // ─── Author profiles ──────────────────────────────────────────────────────────

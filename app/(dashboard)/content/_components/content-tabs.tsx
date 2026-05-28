@@ -51,7 +51,7 @@ export function ContentTabs({ drafts, signals }: ContentTabsProps) {
       </div>
 
       {/* Tab panels */}
-      {activeTab === 'signals'   && <SignalsTab signals={signals} />}
+      {activeTab === 'signals'   && <SignalsTab signals={signals} onDraftCreated={() => setActiveTab('drafts')} />}
       {activeTab === 'drafts'    && (
         <DraftsTab
           drafts={drafts}
