@@ -1,11 +1,11 @@
 'use client'
 import { useState, useTransition, useEffect } from 'react'
-import { ChevronDown, ChevronUp, Clipboard, ClipboardCheck, Trash2, Loader2, Search, X, Check, Plus } from 'lucide-react'
+import { ChevronDown, ChevronUp, Clipboard, ClipboardCheck, Sparkles, Trash2, Loader2, Search, X, Check, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { updateDraft, deleteDraft, addDraftSource, removeDraftSource, getDraftSources, type ContentDraft } from '@/app/actions/content'
+import { updateDraft, deleteDraft, addDraftSource, removeDraftSource, getDraftSources, generateDraftBody, type ContentDraft } from '@/app/actions/content'
 import { searchDocuments, type DocumentResult } from '@/app/actions/intelligence'
 
 const STATUS_OPTIONS = ['brief', 'draft', 'review', 'published'] as const
@@ -73,6 +73,8 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false }: 
   const [isSearching,     startSearch]        = useTransition()
   const [isSaving,        startSave]          = useTransition()
   const [isDeleting,      startDelete]        = useTransition()
+  const [isGenerating,    setIsGenerating]    = useState(false)
+  const [generateError,   setGenerateError]   = useState<string | null>(null)
 
   // Load persisted sources the first time the editor is expanded
   useEffect(() => {
@@ -94,6 +96,18 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false }: 
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
+  }
+
+  async function handleGenerate() {
+    setIsGenerating(true)
+    setGenerateError(null)
+    const result = await generateDraftBody(draft.id)
+    setIsGenerating(false)
+    if (result.error) {
+      setGenerateError(result.error)
+    } else if (result.body) {
+      setBody(result.body)
+    }
   }
 
   function save() {
@@ -317,6 +331,15 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false }: 
                     {charCount.toLocaleString()} / {LINKEDIN_MAX.toLocaleString()}
                   </span>
                 )}
+                <button
+                  onClick={handleGenerate}
+                  disabled={isGenerating || isSaving}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                >
+                  {isGenerating
+                    ? <><Loader2 className="size-3.5 animate-spin" /> Generating…</>
+                    : <><Sparkles className="size-3.5" /> Generate</>}
+                </button>
                 {body && (
                   <button
                     onClick={handleCopy}
@@ -329,6 +352,9 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false }: 
                 )}
               </div>
             </div>
+            {generateError && (
+              <p className="text-xs text-destructive rounded bg-destructive/10 px-2 py-1">{generateError}</p>
+            )}
             <Textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}

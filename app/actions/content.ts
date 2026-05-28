@@ -373,6 +373,86 @@ export async function generateDraftFromSignal(
   return { success: true, draftId: draft.id }
 }
 
+export async function generateDraftBody(
+  draftId: string
+): Promise<{ body?: string; error?: string }> {
+  const result = await requireWorkspace()
+  if ('error' in result) return { error: result.error }
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return { error: 'ANTHROPIC_API_KEY not set — add it to enable AI generation.' }
+  }
+
+  const [{ data: draft }, { data: authorProfile }, { data: sources }] = await Promise.all([
+    adminClient
+      .from('content_drafts')
+      .select('id, format, title, brief, author_profile_id')
+      .eq('id', draftId)
+      .eq('workspace_id', result.workspaceId)
+      .single(),
+    adminClient
+      .from('author_profiles')
+      .select('display_name, role, voice_notes')
+      .eq('workspace_id', result.workspaceId)
+      .eq('user_id', result.userId)
+      .single(),
+    adminClient
+      .from('content_sources')
+      .select('source_documents(title, content)')
+      .eq('draft_id', draftId)
+      .limit(5),
+  ])
+
+  if (!draft) return { error: 'Draft not found' }
+
+  const brief = draft.brief as Brief
+  const format = draft.format as ContentFormat
+
+  const sourceContext = (sources ?? [])
+    .map((s) => {
+      const doc = s.source_documents as unknown as { title: string; content: string } | null
+      return doc ? `— ${doc.title}: ${doc.content.slice(0, 500)}` : null
+    })
+    .filter(Boolean)
+    .join('\n')
+
+  const voiceContext = authorProfile?.voice_notes
+    ? `\n\nAuthor voice (${authorProfile.display_name ?? 'the author'}${authorProfile.role ? `, ${authorProfile.role}` : ''}):\n${authorProfile.voice_notes}`
+    : ''
+
+  const formatLabel: Record<ContentFormat, string> = {
+    linkedin_post:  'LinkedIn post (150–250 words)',
+    email_sequence: 'cold outreach email (100–150 words)',
+    blog_post:      'blog post introduction (300–500 words)',
+    battle_card:    'competitive battle card (bullet points, 200–400 words)',
+  }
+
+  const systemPrompt = `You are a B2B content strategist ghostwriting for a SaaS practitioner. Use plain language, avoid marketing jargon, and write in first person where appropriate.${voiceContext}`
+
+  const parts = [
+    `Write a ${formatLabel[format] ?? format} about: "${brief.topic ?? draft.title}"`,
+    brief.angle ? `Angle: ${brief.angle}` : null,
+    brief.target_audience ? `Target audience: ${brief.target_audience}` : null,
+    brief.key_points?.length ? `Key points to cover:\n${brief.key_points.map((p) => `- ${p}`).join('\n')}` : null,
+    sourceContext ? `\nEvidence from linked sources:\n${sourceContext}` : null,
+  ].filter(Boolean).join('\n')
+
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+  try {
+    const message = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 800,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: parts }],
+    })
+    const body = (message.content[0] as { type: string; text: string }).text ?? ''
+    return { body }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Claude API error' }
+  }
+}
+
 // ─── Author profiles ──────────────────────────────────────────────────────────
 
 export async function getAuthorProfile(): Promise<AuthorProfile | null> {
