@@ -1,8 +1,13 @@
 import { getAuthorProfile } from '@/app/actions/content'
+import { getWorkspaceSettings } from '@/app/actions/workspace'
 import { AuthorProfileForm } from './_components/author-profile-form'
+import { ApiKeyForm } from './_components/api-key-form'
 
 export default async function SettingsPage() {
-  const profile = await getAuthorProfile()
+  const [profile, wsSettings] = await Promise.all([
+    getAuthorProfile(),
+    getWorkspaceSettings(),
+  ])
 
   return (
     <div className="p-8 max-w-2xl">
@@ -22,6 +27,18 @@ export default async function SettingsPage() {
             </p>
           </div>
           <AuthorProfileForm profile={profile} />
+        </section>
+
+        <div className="border-t" />
+
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-base font-medium">AI / Anthropic API key</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Workspace-level key used for content generation and entity extraction. Overrides the server default.
+            </p>
+          </div>
+          <ApiKeyForm hasKey={!!wsSettings.anthropic_api_key} />
         </section>
       </div>
     </div>
