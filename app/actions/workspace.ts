@@ -49,6 +49,26 @@ export async function getWorkspaceSettings(): Promise<WorkspaceSettings> {
   return (ws?.settings as WorkspaceSettings) ?? {}
 }
 
+export async function updateWorkspaceName(name: string): Promise<{ error?: string }> {
+  const result = await requireOwner()
+  if ('error' in result) return { error: result.error }
+
+  const trimmed = name.trim()
+  if (!trimmed || trimmed.length < 2) return { error: 'Name must be at least 2 characters' }
+  if (trimmed.length > 60)           return { error: 'Name must be 60 characters or fewer' }
+
+  const { error } = await adminClient
+    .from('workspaces')
+    .update({ name: trimmed })
+    .eq('id', result.workspaceId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/settings')
+  revalidatePath('/dashboard')
+  return {}
+}
+
 export async function saveAnthropicKey(
   key: string
 ): Promise<{ error?: string }> {

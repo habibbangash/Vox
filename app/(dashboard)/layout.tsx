@@ -1,17 +1,8 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { logout } from '@/app/actions/auth'
 import { getWorkspaceMembership } from '@/lib/supabase/dal'
 import { Button } from '@/components/ui/button'
-
-const navItems = [
-  { href: '/dashboard',    label: 'Home',         icon: '⬡' },
-  { href: '/sources',      label: 'Sources',      icon: '⟡' },
-  { href: '/intelligence', label: 'Intelligence', icon: '◈' },
-  { href: '/content',      label: 'Content',      icon: '⊞' },
-  { href: '/analytics',    label: 'Analytics',    icon: '▲' },
-  { href: '/settings',     label: 'Settings',     icon: '⚙' },
-]
+import { NavLinks } from './_components/nav-links'
 
 export default async function DashboardLayout({
   children,
@@ -43,18 +34,7 @@ export default async function DashboardLayout({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-2 py-3 space-y-0.5">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <span className="text-base leading-none">{item.icon}</span>
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <NavLinks />
 
         {/* Logout */}
         <div className="px-2 py-3 border-t">
