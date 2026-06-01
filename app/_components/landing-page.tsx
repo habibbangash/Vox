@@ -266,11 +266,58 @@ function BentoCard({
   )
 }
 
+const TESTIMONIALS = [
+  {
+    quote: "Vox caught a recurring onboarding objection buried across six Slack threads and three Krisp calls — all in the same week. That became our best-performing LinkedIn post and a new FAQ page. I'd have never spotted it manually.",
+    name: 'Lena M.',
+    title: 'Head of Content',
+    company: 'B2B SaaS',
+  },
+  {
+    quote: "We used to spend a Friday afternoon figuring out what to write next week. Now Vox tells us — and it's always grounded in something a real customer said. The team ships twice as much content with half the effort.",
+    name: 'James R.',
+    title: 'GTM Lead',
+    company: 'Early-stage startup',
+  },
+  {
+    quote: "The knowledge graph is genuinely useful. It shows which objections are connected to which accounts, which topics come up before a deal closes. It's like having a second analyst who reads every call.",
+    name: 'Sarah K.',
+    title: 'Founder',
+    company: 'Revenue-stage B2B',
+  },
+] as const
+
+const USE_CASES = [
+  {
+    tag: 'Content & Demand Gen',
+    tagColor: 'rgba(59,130,246,0.1)',
+    tagTextColor: 'rgba(37,99,235,0.9)',
+    title: 'Turn every call into content that converts.',
+    body: "Your customers already have the words. Vox finds the themes they repeat — across meetings, Slack, and email — and turns them into LinkedIn posts, newsletters, and sales assets that land because they're real.",
+  },
+  {
+    tag: 'Account Executives',
+    tagColor: 'rgba(16,185,129,0.1)',
+    tagTextColor: 'rgba(5,150,105,0.9)',
+    title: 'Walk into every deal knowing what actually matters.',
+    body: "Surface buying signals, recurring objections, and competitive mentions across all your accounts — ranked by recency and frequency. Know the right thing to say before you say it.",
+  },
+  {
+    tag: 'Founders & GTM Leaders',
+    tagColor: 'rgba(245,158,11,0.1)',
+    tagTextColor: 'rgba(180,105,0,0.9)',
+    title: "Stay close to the voice of your customer — without reading every transcript.",
+    body: "Vox synthesises everything your team hears into a live intelligence layer. See what's shifting, what's trending, and what your market is saying right now — not last quarter.",
+  },
+] as const
+
 export function LandingPage() {
-  const features   = useInView(0.08)
-  const howWorks   = useInView(0.08)
-  const pricingRef = useInView(0.08)
-  const ctaRef     = useInView(0.15)
+  const features      = useInView(0.08)
+  const testimonials  = useInView(0.08)
+  const useCases      = useInView(0.08)
+  const howWorks      = useInView(0.08)
+  const pricingRef    = useInView(0.08)
+  const ctaRef        = useInView(0.15)
 
   const reveal = (inView: boolean) =>
     `transition-all duration-700 ${inView ? 'opacity-100 translate-y-0 blur-none' : 'opacity-0 translate-y-10 blur-sm'}`
@@ -425,6 +472,54 @@ export function LandingPage() {
         </div>
       </div>
 
+      {/* ═══ TESTIMONIALS ══════════════════════════════════════════════════════ */}
+      <section className="px-4 sm:px-8 py-32 sm:py-40"
+        style={{ backgroundColor: '#f5f6f8', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+        <div ref={testimonials.ref} className="max-w-6xl mx-auto">
+
+          <div className={`text-center mb-16 ${reveal(testimonials.inView)}`}
+            style={{ transitionTimingFunction: EASE }}>
+            <p className="text-[10px] tracking-[0.3em] uppercase font-medium mb-5"
+              style={{ color: 'rgba(0,0,0,0.38)' }}>What teams are saying</p>
+            <h2 className="text-4xl sm:text-5xl font-normal"
+              style={{ fontFamily: SERIF, letterSpacing: '-1.2px', lineHeight: 1.0, color: LT }}>
+              The signal was always there.{' '}
+              <em className="not-italic" style={{ color: LM }}>Vox finds it.</em>
+            </h2>
+          </div>
+
+          <div className={`grid grid-cols-1 md:grid-cols-3 gap-3 ${reveal(testimonials.inView)}`}
+            style={{ transitionTimingFunction: EASE, transitionDelay: '150ms' }}>
+            {TESTIMONIALS.map((t) => (
+              <div key={t.name} className="p-[6px] rounded-[2rem]"
+                style={{ background: 'rgba(0,0,0,0.025)', border: '1px solid rgba(0,0,0,0.08)' }}>
+                <div className="rounded-[calc(2rem-6px)] p-7 flex flex-col gap-6 h-full bg-background"
+                  style={{ boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.04)' }}>
+                  <svg width="22" height="16" viewBox="0 0 22 16" fill="none" className="shrink-0">
+                    <path d="M0 16V9.6C0 4.267 2.56 1.067 7.68 0l1.12 1.92C6.293 2.667 4.96 4.213 4.64 6.4H8V16H0Zm12 0V9.6C12 4.267 14.56 1.067 19.68 0l1.12 1.92c-2.507.747-3.84 2.293-4.16 4.48H20V16H12Z"
+                      fill="rgba(0,0,0,0.1)" />
+                  </svg>
+                  <p className="text-[14px] leading-relaxed flex-1" style={{ color: LM }}>
+                    {t.quote}
+                  </p>
+                  <div className="flex items-center gap-3 pt-4"
+                    style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0"
+                      style={{ background: 'rgba(0,0,0,0.07)', color: LT }}>
+                      {t.name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-medium" style={{ color: LT }}>{t.name}</p>
+                      <p className="text-[11px]" style={{ color: 'rgba(0,0,0,0.38)' }}>{t.title} · {t.company}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ═══ FEATURES BENTO ════════════════════════════════════════════════════ */}
       <section id="features" className="px-4 sm:px-8 py-32 sm:py-40 bg-background"
         style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
@@ -445,6 +540,45 @@ export function LandingPage() {
             style={{ transitionTimingFunction: EASE, transitionDelay: '150ms' }}>
             {BENTO_FEATURES.map((f) => (
               <BentoCard key={f.tag} {...f} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ USE CASES ═════════════════════════════════════════════════════════ */}
+      <section className="px-4 sm:px-8 py-32 sm:py-40 bg-background"
+        style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+        <div ref={useCases.ref} className="max-w-6xl mx-auto">
+
+          <div className={`text-center mb-16 ${reveal(useCases.inView)}`}
+            style={{ transitionTimingFunction: EASE }}>
+            <p className="text-[10px] tracking-[0.3em] uppercase font-medium mb-5"
+              style={{ color: 'rgba(0,0,0,0.38)' }}>Built for</p>
+            <h2 className="text-4xl sm:text-5xl md:text-[60px] font-normal max-w-[20ch] mx-auto"
+              style={{ fontFamily: SERIF, letterSpacing: '-1.8px', lineHeight: 1.0, color: LT }}>
+              Revenue teams who{' '}
+              <em className="not-italic" style={{ color: LM }}>move on signal.</em>
+            </h2>
+          </div>
+
+          <div className={`grid grid-cols-1 md:grid-cols-3 gap-3 ${reveal(useCases.inView)}`}
+            style={{ transitionTimingFunction: EASE, transitionDelay: '150ms' }}>
+            {USE_CASES.map((u) => (
+              <div key={u.tag} className="p-[6px] rounded-[2rem]"
+                style={{ background: 'rgba(0,0,0,0.025)', border: '1px solid rgba(0,0,0,0.08)' }}>
+                <div className="rounded-[calc(2rem-6px)] p-7 flex flex-col gap-5 h-full bg-background"
+                  style={{ boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.04)' }}>
+                  <span className="inline-block self-start rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] font-medium"
+                    style={{ background: u.tagColor, color: u.tagTextColor }}>
+                    {u.tag}
+                  </span>
+                  <h3 className="text-lg sm:text-xl font-normal leading-snug"
+                    style={{ fontFamily: SERIF, color: LT }}>
+                    {u.title}
+                  </h3>
+                  <p className="text-[14px] leading-relaxed flex-1" style={{ color: LM }}>{u.body}</p>
+                </div>
+              </div>
             ))}
           </div>
         </div>
