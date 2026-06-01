@@ -2,6 +2,10 @@ import type { NextRequest } from 'next/server'
 import { adminClient } from '@/lib/supabase/admin'
 import { type KrispWebhookPayload, extractDocumentFields } from '@/lib/sources/krisp'
 
+export async function GET() {
+  return new Response('OK', { status: 200 })
+}
+
 export async function POST(request: NextRequest) {
   const token = request.nextUrl.searchParams.get('token')
   if (!token) return new Response('Missing token', { status: 401 })
