@@ -1,5 +1,6 @@
-import { getRecentDocuments, getTopEntities } from '@/app/actions/intelligence'
+import { getRecentDocuments, getTopEntities, getWorkspaceGraph } from '@/app/actions/intelligence'
 import { SearchInterface } from './_components/search-interface'
+import { KnowledgeGraph } from './_components/knowledge-graph'
 
 const ENTITY_TYPE_STYLE: Record<string, { label: string; chip: string }> = {
   person:         { label: 'People',         chip: 'bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300'  },
@@ -14,7 +15,7 @@ const ENTITY_TYPE_STYLE: Record<string, { label: string; chip: string }> = {
 }
 
 export default async function IntelligencePage() {
-  const [initial, entities] = await Promise.all([getRecentDocuments(), getTopEntities()])
+  const [initial, entities, graph] = await Promise.all([getRecentDocuments(), getTopEntities(), getWorkspaceGraph()])
 
   const grouped = entities.reduce<Record<string, typeof entities>>((acc, e) => {
     const key = e.type in ENTITY_TYPE_STYLE ? e.type : 'other'
@@ -69,6 +70,17 @@ export default async function IntelligencePage() {
           </div>
         </section>
       )}
+
+      {/* ── Knowledge graph ── */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-base font-medium">Knowledge graph</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Visual map of entities and their relationships across all your sources.
+          </p>
+        </div>
+        <KnowledgeGraph data={graph} />
+      </section>
     </div>
   )
 }

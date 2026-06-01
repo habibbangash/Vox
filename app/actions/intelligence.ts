@@ -225,6 +225,51 @@ export async function getTopEntities(limit = 30): Promise<TopEntity[]> {
     }))
 }
 
+// ─── Knowledge graph ──────────────────────────────────────────────────────────
+
+export interface GraphNode {
+  id:            string
+  type:          string
+  name:          string
+  canonical_name: string
+  mention_count: number
+}
+
+export interface GraphEdge {
+  id:             string
+  source:         string
+  target:         string
+  relationship:   string
+  weight:         number
+  evidence_count: number
+}
+
+export interface GraphData {
+  nodes: GraphNode[]
+  edges: GraphEdge[]
+}
+
+export async function getWorkspaceGraph(limit = 300): Promise<GraphData> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { nodes: [], edges: [] }
+
+  const workspaceId = await getWorkspaceId(user.id)
+  if (!workspaceId) return { nodes: [], edges: [] }
+
+  const { data, error } = await adminClient.rpc('get_workspace_graph', {
+    p_workspace_id: workspaceId,
+    p_limit: limit,
+  })
+
+  if (error || !data) return { nodes: [], edges: [] }
+
+  return {
+    nodes: (data.nodes ?? []) as GraphNode[],
+    edges: (data.edges ?? []) as GraphEdge[],
+  }
+}
+
 // ─── RAG answer ───────────────────────────────────────────────────────────────
 
 async function resolveAnthropicKey(workspaceId: string): Promise<string | null> {

@@ -19,6 +19,7 @@
     "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-force-graph-2d": "^1.29.1",
     "rss-parser": "^3.13.0",
     "shadcn": "^4.7.0",
     "tailwind-merge": "^3.6.0",
