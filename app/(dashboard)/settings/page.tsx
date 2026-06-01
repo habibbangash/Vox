@@ -58,12 +58,12 @@ export default async function SettingsPage() {
 
         <section className="space-y-4">
           <div>
-            <h2 className="text-base font-medium">AI / Anthropic API key</h2>
+            <h2 className="text-base font-medium">AI / Groq API key</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
               Workspace-level key used for content generation and entity extraction. Overrides the server default.
             </p>
           </div>
-          <ApiKeyForm hasKey={!!wsSettings.anthropic_api_key} />
+          <ApiKeyForm hasKey={!!wsSettings.groq_api_key} />
         </section>
 
         <div className="border-t" />

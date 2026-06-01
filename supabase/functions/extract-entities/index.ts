@@ -33,13 +33,9 @@ function canonicalise(name: string): string {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
-  const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
+  const apiKey = Deno.env.get('GROQ_API_KEY')
   if (!apiKey) {
-    // Graceful no-op until the key is added to Supabase secrets.
-    // The trigger fires this function automatically once embed-document
-    // sets processed = true, so extraction will begin immediately when
-    // ANTHROPIC_API_KEY is set — no backfill needed for new documents.
-    console.warn('[extract-entities] ANTHROPIC_API_KEY not set — skipping')
+    console.warn('[extract-entities] GROQ_API_KEY not set — skipping')
     return new Response('API key not configured', { status: 200 })
   }
 
@@ -132,15 +128,14 @@ ${doc.content.slice(0, 12000)}
 
   let extraction: ExtractionResult
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Content-Type':      'application/json',
-        'x-api-key':         apiKey,
-        'anthropic-version': '2023-06-01',
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model:      'claude-haiku-4-5-20251001',
+        model:      'llama-3.3-70b-versatile',
         max_tokens: 2048,
         messages: [{ role: 'user', content: prompt }],
       }),
@@ -148,12 +143,12 @@ ${doc.content.slice(0, 12000)}
 
     if (!response.ok) {
       const err = await response.text()
-      console.error('[extract-entities] Claude API error:', err)
-      return new Response('Claude API error', { status: 500 })
+      console.error('[extract-entities] Groq API error:', err)
+      return new Response('Groq API error', { status: 500 })
     }
 
     const data   = await response.json()
-    const raw    = data.content?.[0]?.text ?? ''
+    const raw    = data.choices?.[0]?.message?.content ?? ''
     // Strip markdown code fences if Claude wraps the JSON
     const jsonStr = raw.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim()
     extraction   = JSON.parse(jsonStr)

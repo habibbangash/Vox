@@ -21,7 +21,7 @@ async function requireOwner(): Promise<{ workspaceId: string } | { error: string
 }
 
 export interface WorkspaceSettings {
-  anthropic_api_key?: string
+  groq_api_key?: string
   resend_api_key?: string
   resend_from_name?: string
   resend_from_email?: string
@@ -69,15 +69,15 @@ export async function updateWorkspaceName(name: string): Promise<{ error?: strin
   return {}
 }
 
-export async function saveAnthropicKey(
+export async function saveGroqKey(
   key: string
 ): Promise<{ error?: string }> {
   const result = await requireOwner()
   if ('error' in result) return { error: result.error }
 
   const trimmed = key.trim()
-  if (!trimmed.startsWith('sk-ant-')) {
-    return { error: 'Key must start with sk-ant-' }
+  if (!trimmed.startsWith('gsk_')) {
+    return { error: 'Key must start with gsk_' }
   }
 
   const { data: ws } = await adminClient
@@ -86,7 +86,7 @@ export async function saveAnthropicKey(
     .eq('id', result.workspaceId)
     .single()
 
-  const settings = { ...((ws?.settings as WorkspaceSettings) ?? {}), anthropic_api_key: trimmed }
+  const settings = { ...((ws?.settings as WorkspaceSettings) ?? {}), groq_api_key: trimmed }
 
   const { error } = await adminClient
     .from('workspaces')
@@ -99,25 +99,22 @@ export async function saveAnthropicKey(
   return {}
 }
 
-export async function testAnthropicKey(
+export async function testGroqKey(
   key: string
 ): Promise<{ valid: boolean; error?: string }> {
   try {
-    const res = await fetch('https://api.anthropic.com/v1/models', {
-      headers: {
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-      },
+    const res = await fetch('https://api.groq.com/openai/v1/models', {
+      headers: { 'Authorization': `Bearer ${key}` },
     })
-    if (res.status === 401) return { valid: false, error: 'Invalid API key — double-check it on console.anthropic.com' }
-    if (!res.ok)            return { valid: false, error: `Anthropic returned ${res.status}` }
+    if (res.status === 401) return { valid: false, error: 'Invalid API key — double-check it on console.groq.com' }
+    if (!res.ok)            return { valid: false, error: `Groq returned ${res.status}` }
     return { valid: true }
   } catch {
-    return { valid: false, error: 'Could not reach Anthropic — check your connection' }
+    return { valid: false, error: 'Could not reach Groq — check your connection' }
   }
 }
 
-export async function removeAnthropicKey(): Promise<{ error?: string }> {
+export async function removeGroqKey(): Promise<{ error?: string }> {
   const result = await requireOwner()
   if ('error' in result) return { error: result.error }
 
@@ -128,7 +125,7 @@ export async function removeAnthropicKey(): Promise<{ error?: string }> {
     .single()
 
   const settings = { ...((ws?.settings as WorkspaceSettings) ?? {}) }
-  delete settings.anthropic_api_key
+  delete settings.groq_api_key
 
   const { error } = await adminClient
     .from('workspaces')

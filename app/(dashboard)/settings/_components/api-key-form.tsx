@@ -4,7 +4,7 @@ import { Eye, EyeOff, Check, Trash2, Loader2, KeyRound, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { saveAnthropicKey, removeAnthropicKey, testAnthropicKey } from '@/app/actions/workspace'
+import { saveGroqKey, removeGroqKey, testGroqKey } from '@/app/actions/workspace'
 
 interface ApiKeyFormProps {
   hasKey: boolean
@@ -25,13 +25,13 @@ export function ApiKeyForm({ hasKey }: ApiKeyFormProps) {
     setError(null)
     setKeyStatus('idle')
     startSave(async () => {
-      const result = await saveAnthropicKey(keyValue)
+      const result = await saveGroqKey(keyValue)
       if (result.error) {
         setError(result.error)
       } else {
         setSaved(true)
         setKeyStatus('testing')
-        const validation = await testAnthropicKey(keyValue)
+        const validation = await testGroqKey(keyValue)
         setKeyValue('')
         setKeyStatus(validation.valid ? 'valid' : 'invalid')
         if (!validation.valid) setError(validation.error ?? 'Key saved but could not be verified')
@@ -41,10 +41,10 @@ export function ApiKeyForm({ hasKey }: ApiKeyFormProps) {
   }
 
   async function handleRemove() {
-    if (!confirm('Remove the Anthropic API key? Content generation will fall back to the server-level key (if set).')) return
+    if (!confirm('Remove the Groq API key? Content generation will stop until a new key is added.')) return
     setError(null)
     startRemove(async () => {
-      const result = await removeAnthropicKey()
+      const result = await removeGroqKey()
       if (result.error) setError(result.error)
     })
   }
@@ -56,7 +56,7 @@ export function ApiKeyForm({ hasKey }: ApiKeyFormProps) {
           <div className="flex items-center gap-2.5 text-sm">
             <KeyRound className={`size-4 shrink-0 ${keyStatus === 'valid' ? 'text-green-500' : keyStatus === 'invalid' ? 'text-destructive' : 'text-green-500'}`} />
             <span className="text-muted-foreground">Workspace key set</span>
-            <span className="font-mono text-xs text-muted-foreground/60">sk-ant-···</span>
+            <span className="font-mono text-xs text-muted-foreground/60">gsk_···</span>
             {keyStatus === 'testing' && (
               <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Loader2 className="size-3 animate-spin" /> Verifying…
@@ -89,7 +89,7 @@ export function ApiKeyForm({ hasKey }: ApiKeyFormProps) {
           {keyStatus === 'testing'
             ? <Loader2 className="size-4 shrink-0 animate-spin" />
             : <Check className="size-4 shrink-0" />}
-          {keyStatus === 'testing' ? 'Key saved — verifying with Anthropic…' : 'API key saved and verified.'}
+          {keyStatus === 'testing' ? 'Key saved — verifying with Groq…' : 'API key saved and verified.'}
         </div>
       ) : null}
 
@@ -97,21 +97,21 @@ export function ApiKeyForm({ hasKey }: ApiKeyFormProps) {
         <div className="rounded-lg border bg-muted/30 px-4 py-3 text-xs text-muted-foreground leading-relaxed space-y-1">
           <p className="font-medium text-foreground">What is this?</p>
           <p>
-            Vox uses Anthropic&apos;s Claude AI to generate content drafts and extract insights from your sources.
+            Vox uses Groq&apos;s free API to generate content drafts and extract insights from your sources.
             You need an API key to enable these features.
           </p>
           <p>
             Get a free key at{' '}
-            <a href="https://console.anthropic.com/keys" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 text-foreground">
-              console.anthropic.com/keys
+            <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 text-foreground">
+              console.groq.com/keys
             </a>
-            {' '}— typical usage costs a few dollars per month.
+            {' '}— free tier, no credit card required.
           </p>
         </div>
       )}
 
       <div className="space-y-1.5">
-        <Label className="text-xs">{hasKey ? 'Replace key' : 'Anthropic API key'}</Label>
+        <Label className="text-xs">{hasKey ? 'Replace key' : 'Groq API key'}</Label>
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Input
@@ -119,7 +119,7 @@ export function ApiKeyForm({ hasKey }: ApiKeyFormProps) {
               value={keyValue}
               onChange={(e) => setKeyValue(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && keyValue.trim() && handleSave()}
-              placeholder="sk-ant-api03-…"
+              placeholder="gsk_…"
               className="h-9 text-sm pr-9 font-mono"
               autoComplete="off"
             />
@@ -148,8 +148,8 @@ export function ApiKeyForm({ hasKey }: ApiKeyFormProps) {
         <p className="text-xs text-muted-foreground">
           Used for AI content generation. Stored in your workspace — never logged or shared.
           Get a key at{' '}
-          <a href="https://console.anthropic.com/keys" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
-            console.anthropic.com
+          <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+            console.groq.com
           </a>.
         </p>
       </div>

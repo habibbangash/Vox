@@ -1,11 +1,9 @@
 'use server'
-import Anthropic from '@anthropic-ai/sdk'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { adminClient } from '@/lib/supabase/admin'
 
-async function resolveAnthropicKey(workspaceId: string): Promise<string | null> {
-  // Workspace-level key takes precedence over env var
+async function resolveGroqKey(workspaceId: string): Promise<string | null> {
   const { data: ws } = await adminClient
     .from('workspaces')
     .select('settings')
@@ -13,7 +11,7 @@ async function resolveAnthropicKey(workspaceId: string): Promise<string | null> 
     .single()
 
   const settings = ws?.settings as Record<string, string> | null
-  return settings?.['anthropic_api_key'] ?? process.env.ANTHROPIC_API_KEY ?? null
+  return settings?.['groq_api_key'] ?? process.env.GROQ_API_KEY ?? null
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -352,9 +350,9 @@ export async function generateDraftFromSignal(
   const result = await requireWorkspace()
   if ('error' in result) return { error: result.error }
 
-  const anthropicKey = await resolveAnthropicKey(result.workspaceId)
-  if (!anthropicKey) {
-    return { error: 'No Anthropic API key configured — add one in Settings or set ANTHROPIC_API_KEY.' }
+  const groqKey = await resolveGroqKey(result.workspaceId)
+  if (!groqKey) {
+    return { error: 'No Groq API key configured — add one in Settings or set GROQ_API_KEY.' }
   }
 
   // Load signal + author profile in parallel
@@ -403,19 +401,25 @@ export async function generateDraftFromSignal(
 
   const systemPrompt = `You are a B2B content strategist ghostwriting for a SaaS practitioner. Your writing sounds like a thoughtful practitioner, not a marketer. Use plain language, avoid corporate jargon, and prioritise customer voice over brand voice.${voiceContext}\n\n${snippetBlock}`
 
-  const client = new Anthropic({ apiKey: anthropicKey })
-
   let body: string
   try {
-    const message = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 600,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqKey}` },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 600,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user',   content: userPrompt },
+        ],
+      }),
     })
-    body = (message.content[0] as { type: string; text: string }).text ?? ''
+    if (!res.ok) throw new Error(`Groq returned ${res.status}`)
+    const data = await res.json()
+    body = data.choices?.[0]?.message?.content ?? ''
   } catch (err) {
-    return { error: err instanceof Error ? err.message : 'Claude API error' }
+    return { error: err instanceof Error ? err.message : 'Groq API error' }
   }
 
   const title = `${signal.title} — ${format === 'linkedin_post' ? 'LinkedIn Post' : format === 'email_sequence' ? 'Email' : format}`
@@ -453,9 +457,9 @@ export async function generateDraftBody(
   const result = await requireWorkspace()
   if ('error' in result) return { error: result.error }
 
-  const anthropicKey = await resolveAnthropicKey(result.workspaceId)
-  if (!anthropicKey) {
-    return { error: 'No Anthropic API key configured — add one in Settings or set ANTHROPIC_API_KEY.' }
+  const groqKey = await resolveGroqKey(result.workspaceId)
+  if (!groqKey) {
+    return { error: 'No Groq API key configured — add one in Settings or set GROQ_API_KEY.' }
   }
 
   const [{ data: draft }, { data: authorProfile }, { data: sources }] = await Promise.all([
@@ -512,19 +516,25 @@ export async function generateDraftBody(
     sourceContext ? `\nEvidence from linked sources:\n${sourceContext}` : null,
   ].filter(Boolean).join('\n')
 
-  const client = new Anthropic({ apiKey: anthropicKey })
-
   try {
-    const message = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 800,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: parts }],
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqKey}` },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 800,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user',   content: parts },
+        ],
+      }),
     })
-    const body = (message.content[0] as { type: string; text: string }).text ?? ''
+    if (!res.ok) throw new Error(`Groq returned ${res.status}`)
+    const data = await res.json()
+    const body = data.choices?.[0]?.message?.content ?? ''
     return { body }
   } catch (err) {
-    return { error: err instanceof Error ? err.message : 'Claude API error' }
+    return { error: err instanceof Error ? err.message : 'Groq API error' }
   }
 }
 
