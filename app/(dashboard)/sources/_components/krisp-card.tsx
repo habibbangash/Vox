@@ -46,7 +46,16 @@ export function KrispCard({ connection }: KrispCardProps) {
 
   async function handleCopy() {
     if (!webhookUrl) return
-    await navigator.clipboard.writeText(webhookUrl)
+    try {
+      await navigator.clipboard.writeText(webhookUrl)
+    } catch {
+      const el = document.createElement('textarea')
+      el.value = webhookUrl
+      document.body.appendChild(el)
+      el.select()
+      document.execCommand('copy')
+      document.body.removeChild(el)
+    }
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -95,7 +104,8 @@ export function KrispCard({ connection }: KrispCardProps) {
                 <Input
                   readOnly
                   value={webhookUrl}
-                  className="h-7 font-mono text-xs"
+                  className="h-7 font-mono text-xs cursor-pointer"
+                  onClick={e => (e.target as HTMLInputElement).select()}
                 />
                 <Button size="sm" variant="outline" onClick={handleCopy}>
                   {copied ? 'Copied!' : 'Copy'}
