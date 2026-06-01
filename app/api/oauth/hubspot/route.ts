@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   const params = new URLSearchParams({
     client_id: process.env.HUBSPOT_CLIENT_ID ?? 'HUBSPOT_CLIENT_ID_NOT_SET',
     redirect_uri: redirectUri,
-    scope: 'crm.objects.contacts.read crm.objects.deals.read',
+    scope: 'crm.objects.contacts.read crm.objects.deals.read crm.objects.notes.read crm.objects.calls.read',
     state,
   })
 

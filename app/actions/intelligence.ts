@@ -194,34 +194,19 @@ export async function getTopEntities(limit = 30): Promise<TopEntity[]> {
   const workspaceId = await getWorkspaceId(user.id)
   if (!workspaceId) return []
 
-  // Aggregate mention counts per entity in one query
-  const { data } = await adminClient
-    .from('entity_mentions')
-    .select('entity_id, entities!inner(id, type, canonical_name)')
-    .eq('workspace_id', workspaceId)
+  const { data } = await adminClient.rpc('get_top_entities', {
+    p_workspace_id: workspaceId,
+    p_limit: limit,
+  })
 
-  if (!data || data.length === 0) return []
+  if (!data) return []
 
-  const counts: Record<string, { entity: { id: string; type: string; canonical_name: string }; count: number }> = {}
-
-  for (const row of data) {
-    const entity = row.entities as unknown as { id: string; type: string; canonical_name: string }
-    if (!entity) continue
-    if (!counts[entity.id]) {
-      counts[entity.id] = { entity, count: 0 }
-    }
-    counts[entity.id].count++
-  }
-
-  return Object.values(counts)
-    .sort((a, b) => b.count - a.count)
-    .slice(0, limit)
-    .map(({ entity, count }) => ({
-      id: entity.id,
-      type: entity.type,
-      canonical_name: entity.canonical_name,
-      mention_count: count,
-    }))
+  return (data as { id: string; type: string; canonical_name: string; mention_count: number }[]).map((row) => ({
+    id: row.id,
+    type: row.type,
+    canonical_name: row.canonical_name,
+    mention_count: Number(row.mention_count),
+  }))
 }
 
 // ─── Knowledge graph ──────────────────────────────────────────────────────────
