@@ -115,7 +115,7 @@ export function KnowledgeGraph({ data }: KnowledgeGraphProps) {
       <div className="flex flex-col items-center justify-center h-80 rounded-xl border border-dashed text-center gap-2">
         <p className="text-sm font-medium text-muted-foreground">No graph data yet</p>
         <p className="text-xs text-muted-foreground max-w-xs">
-          Connect sources and sync documents — entities and relationships will appear here automatically once your ANTHROPIC_API_KEY is set.
+          Connect sources and sync documents — entities and relationships will appear here automatically once you've synced content.
         </p>
       </div>
     )

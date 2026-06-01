@@ -94,5 +94,5 @@ export async function GET(request: NextRequest) {
 
   cookieStore.delete('oauth_state')
 
-  return NextResponse.redirect(new URL('/content?linkedin=connected', base))
+  return NextResponse.redirect(new URL('/sources?linkedin=connected', base))
 }

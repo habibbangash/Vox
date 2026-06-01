@@ -106,12 +106,30 @@ export async function getDrafts(): Promise<ContentDraft[]> {
   return (data ?? []) as ContentDraft[]
 }
 
+const FREE_DRAFT_LIMIT = 20
+
 export async function createDraft(
   state: ContentActionState,
   formData: FormData
 ): Promise<ContentActionState> {
   const result = await requireWorkspace()
   if ('error' in result) return { error: result.error }
+
+  // Enforce free-plan monthly draft limit
+  const { data: ws } = await adminClient
+    .from('workspaces')
+    .select('plan')
+    .eq('id', result.workspaceId)
+    .single()
+
+  if (ws?.plan === 'free') {
+    const { data: draftCount } = await adminClient.rpc('count_drafts_this_month', {
+      p_workspace_id: result.workspaceId,
+    })
+    if ((draftCount as number) >= FREE_DRAFT_LIMIT) {
+      return { error: `Free plan limit reached — ${FREE_DRAFT_LIMIT} drafts per month. Upgrade to Growth for unlimited drafts.` }
+    }
+  }
 
   const title  = (formData.get('title')  as string)?.trim()
   const format = (formData.get('format') as ContentFormat) ?? 'linkedin_post'
