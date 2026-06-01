@@ -74,14 +74,14 @@ export default async function DashboardPage() {
   }
 
   // Onboarding checklist — shown until all steps are done
-  const hasKey = !!(wsSettings as { anthropic_api_key?: string }).anthropic_api_key || !!process.env.ANTHROPIC_API_KEY
+  const hasKey = !!(wsSettings as { groq_api_key?: string }).groq_api_key || !!process.env.GROQ_API_KEY
   const steps = [
     { done: true,                     label: 'Workspace created',                        href: null,       optional: false },
     { done: (sourceCount ?? 0) > 0,   label: 'Connect a source',                         href: '/sources', optional: false },
     { done: (docCount ?? 0) > 0,      label: 'Sync your first content (takes 2–5 min)',  href: '/sources', optional: false },
     { done: (signalCount ?? 0) > 0,   label: 'Generate a signal (auto or manual)',       href: '/content', optional: false },
     { done: (draftCount ?? 0) > 0,    label: 'Create your first draft',                  href: '/content', optional: false },
-    { done: hasKey,                    label: 'Add Anthropic API key',                    href: '/settings', optional: true  },
+    { done: hasKey,                    label: 'Add Groq API key',                         href: '/settings', optional: true  },
   ]
   const allDone = steps.filter(s => !s.optional).every((s) => s.done)
 
