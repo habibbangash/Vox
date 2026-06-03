@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { GoogleButton } from '@/app/(auth)/_components/google-button'
 
 interface LoginFormProps {
   next?: string
@@ -21,6 +22,18 @@ export function LoginForm({ next }: LoginFormProps) {
         <CardTitle className="text-xl">Welcome back</CardTitle>
         <CardDescription>Sign in to your workspace</CardDescription>
       </CardHeader>
+
+      <div className="px-6 pb-2">
+        <GoogleButton next={next} />
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">or</span>
+          </div>
+        </div>
+      </div>
 
       <form action={action}>
         {next && <input type="hidden" name="next" value={next} />}
