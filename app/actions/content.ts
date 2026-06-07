@@ -500,7 +500,8 @@ export async function generateDraftFromSignal(
         ],
       }),
     })
-    if (!res.ok) throw new Error(`Groq returned ${res.status}`)
+    if (res.status === 429) throw new Error('Groq API quota exceeded — add your own API key in Settings to continue generating content.')
+    if (!res.ok) throw new Error(`Groq API error (${res.status}) — try again shortly.`)
     const data = await res.json()
     body = data.choices?.[0]?.message?.content ?? ''
   } catch (err) {
@@ -624,7 +625,8 @@ export async function generateDraftBody(
         ],
       }),
     })
-    if (!res.ok) throw new Error(`Groq returned ${res.status}`)
+    if (res.status === 429) throw new Error('Groq API quota exceeded — add your own API key in Settings to continue generating content.')
+    if (!res.ok) throw new Error(`Groq API error (${res.status}) — try again shortly.`)
     const data = await res.json()
     const body = data.choices?.[0]?.message?.content ?? ''
     return { body }
