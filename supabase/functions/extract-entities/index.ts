@@ -65,6 +65,11 @@ Deno.serve(async (req: Request) => {
     return new Response('Document not found', { status: 404 })
   }
 
+  // Skip contact-card-style docs — too short to extract meaningful entities
+  if (!doc.content || doc.content.length < 200) {
+    return new Response(JSON.stringify({ ok: true, skipped: true, reason: 'content_too_short' }), { status: 200 })
+  }
+
   // Skip if already extracted
   const { count } = await supabase
     .from('entity_mentions')
@@ -147,14 +152,28 @@ ${doc.content.slice(0, 12000)}
       return new Response('Groq API error', { status: 500 })
     }
 
-    const data   = await response.json()
-    const raw    = data.choices?.[0]?.message?.content ?? ''
-    // Strip markdown code fences if Claude wraps the JSON
-    const jsonStr = raw.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim()
-    extraction   = JSON.parse(jsonStr)
+    const data = await response.json()
+    const raw  = data.choices?.[0]?.message?.content ?? ''
+
+    // Strip markdown fences then try to extract the JSON object/array
+    const cleaned = raw.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim()
+
+    // Find the outermost JSON object in case the model added prose around it
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      console.warn('[extract-entities] no JSON object in Groq response — skipping doc', id)
+      return new Response(JSON.stringify({ ok: true, entities: 0 }), { status: 200 })
+    }
+
+    try {
+      extraction = JSON.parse(jsonMatch[0])
+    } catch (parseErr) {
+      console.warn('[extract-entities] JSON parse failed — skipping doc', id, parseErr)
+      return new Response(JSON.stringify({ ok: true, entities: 0 }), { status: 200 })
+    }
   } catch (e) {
-    console.error('[extract-entities] parse error:', e)
-    return new Response('Extraction parse error', { status: 500 })
+    console.error('[extract-entities] Groq fetch error:', e)
+    return new Response('Groq fetch error', { status: 500 })
   }
 
   if (!extraction.entities?.length) {
