@@ -73,6 +73,65 @@ export type ContentActionState = { error?: string; success?: boolean; draftId?: 
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+interface EntityRow { type: string; name: string; mention_count: number }
+
+async function getEntityIntelligenceBlock(workspaceId: string): Promise<string> {
+  const { data: rows } = await adminClient
+    .from('entity_mentions')
+    .select('entities(type, name)')
+    .eq('workspace_id', workspaceId)
+    .not('entities', 'is', null)
+    .limit(500)
+
+  if (!rows?.length) return ''
+
+  // Aggregate mention counts per entity
+  const counts = new Map<string, EntityRow>()
+  for (const row of rows) {
+    const e = row.entities as unknown as { type: string; name: string } | null
+    if (!e) continue
+    const key = `${e.type}::${e.name}`
+    const existing = counts.get(key)
+    if (existing) existing.mention_count++
+    else counts.set(key, { type: e.type, name: e.name, mention_count: 1 })
+  }
+
+  const byType: Record<string, EntityRow[]> = {}
+  for (const entity of counts.values()) {
+    if (!byType[entity.type]) byType[entity.type] = []
+    byType[entity.type].push(entity)
+  }
+
+  const typeLabels: Record<string, string> = {
+    company:        'Companies',
+    person:         'People',
+    topic:          'Topics',
+    objection:      'Objections',
+    buying_signal:  'Buying signals',
+    competitor:     'Competitors',
+    product:        'Products',
+    theme:          'Themes',
+    other:          'Other',
+  }
+
+  const lines: string[] = []
+  const orderedTypes = ['objection', 'buying_signal', 'topic', 'company', 'competitor', 'person', 'product', 'theme', 'other']
+  for (const type of orderedTypes) {
+    const entities = byType[type]
+    if (!entities?.length) continue
+    const top = entities
+      .sort((a, b) => b.mention_count - a.mention_count)
+      .slice(0, 6)
+      .map((e) => `${e.name} (${e.mention_count})`)
+      .join(', ')
+    lines.push(`- ${typeLabels[type] ?? type}: ${top}`)
+  }
+
+  if (!lines.length) return ''
+
+  return `\nWorkspace intelligence (extracted from customer conversations):\n${lines.join('\n')}\nUse these entities to make the content feel grounded in real customer language and context.\n`
+}
+
 async function getWorkspaceId(userId: string): Promise<string | null> {
   const { data } = await adminClient
     .from('workspace_members')
@@ -373,8 +432,8 @@ export async function generateDraftFromSignal(
     return { error: 'No Groq API key configured — add one in Settings or set GROQ_API_KEY.' }
   }
 
-  // Load signal + author profile in parallel
-  const [{ data: signal }, { data: authorProfile }] = await Promise.all([
+  // Load signal, author profile, and entity intelligence in parallel
+  const [{ data: signal }, { data: authorProfile }, entityIntel] = await Promise.all([
     adminClient
       .from('signals')
       .select('*')
@@ -387,6 +446,7 @@ export async function generateDraftFromSignal(
       .eq('workspace_id', result.workspaceId)
       .eq('user_id', result.userId)
       .single(),
+    getEntityIntelligenceBlock(result.workspaceId),
   ])
 
   if (!signal) return { error: 'Signal not found' }
@@ -417,7 +477,7 @@ export async function generateDraftFromSignal(
     ? `\n\nAuthor voice profile (${authorProfile.display_name ?? 'the author'}${authorProfile.role ? `, ${authorProfile.role}` : ''}):\n${authorProfile.voice_notes}`
     : ''
 
-  const systemPrompt = `You are a B2B content strategist ghostwriting for a SaaS practitioner. Your writing sounds like a thoughtful practitioner, not a marketer. Use plain language, avoid corporate jargon, and prioritise customer voice over brand voice.${voiceContext}\n\n${snippetBlock}`
+  const systemPrompt = `You are a B2B content strategist ghostwriting for a SaaS practitioner. Your writing sounds like a thoughtful practitioner, not a marketer. Use plain language, avoid corporate jargon, and prioritise customer voice over brand voice.${voiceContext}${entityIntel}\n\n${snippetBlock}`
 
   let body: string
   try {
@@ -480,7 +540,7 @@ export async function generateDraftBody(
     return { error: 'No Groq API key configured — add one in Settings or set GROQ_API_KEY.' }
   }
 
-  const [{ data: draft }, { data: authorProfile }, { data: sources }] = await Promise.all([
+  const [{ data: draft }, { data: authorProfile }, { data: sources }, entityIntel] = await Promise.all([
     adminClient
       .from('content_drafts')
       .select('id, format, title, brief, author_profile_id')
@@ -498,6 +558,7 @@ export async function generateDraftBody(
       .select('source_documents(title, content)')
       .eq('draft_id', draftId)
       .limit(5),
+    getEntityIntelligenceBlock(result.workspaceId),
   ])
 
   if (!draft) return { error: 'Draft not found' }
@@ -524,7 +585,7 @@ export async function generateDraftBody(
     battle_card:    'competitive battle card (bullet points, 200–400 words)',
   }
 
-  const systemPrompt = `You are a B2B content strategist ghostwriting for a SaaS practitioner. Use plain language, avoid marketing jargon, and write in first person where appropriate.${voiceContext}`
+  const systemPrompt = `You are a B2B content strategist ghostwriting for a SaaS practitioner. Use plain language, avoid marketing jargon, and write in first person where appropriate.${voiceContext}${entityIntel}`
 
   const parts = [
     `Write a ${formatLabel[format] ?? format} about: "${brief.topic ?? draft.title}"`,
