@@ -1,14 +1,11 @@
 import { getDrafts, getSignals } from '@/app/actions/content'
-import { getLinkedInConnection, getEmailConfig } from '@/app/actions/publish'
 import { getPersonas } from '@/app/actions/personas'
 import { ContentTabs } from './_components/content-tabs'
 
 export default async function ContentPage() {
-  const [drafts, signals, linkedIn, emailCfg, personas] = await Promise.all([
+  const [drafts, signals, personas] = await Promise.all([
     getDrafts(),
     getSignals(),
-    getLinkedInConnection(),
-    getEmailConfig(),
     getPersonas(),
   ])
 
@@ -23,8 +20,6 @@ export default async function ContentPage() {
       <ContentTabs
         drafts={drafts}
         signals={signals}
-        linkedInConnected={linkedIn.connected}
-        emailConfigured={emailCfg.configured}
         personas={personas}
       />
     </div>

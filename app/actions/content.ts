@@ -180,7 +180,6 @@ export async function getDrafts(): Promise<ContentDraft[]> {
   return (data ?? []) as ContentDraft[]
 }
 
-const FREE_DRAFT_LIMIT = 20
 
 export async function createDraft(
   state: ContentActionState,
@@ -188,22 +187,6 @@ export async function createDraft(
 ): Promise<ContentActionState> {
   const result = await requireWorkspace()
   if ('error' in result) return { error: result.error }
-
-  // Enforce free-plan monthly draft limit
-  const { data: ws } = await adminClient
-    .from('workspaces')
-    .select('plan')
-    .eq('id', result.workspaceId)
-    .single()
-
-  if (ws?.plan === 'free') {
-    const { data: draftCount } = await adminClient.rpc('count_drafts_this_month', {
-      p_workspace_id: result.workspaceId,
-    })
-    if ((draftCount as number) >= FREE_DRAFT_LIMIT) {
-      return { error: `Free plan limit reached — ${FREE_DRAFT_LIMIT} drafts per month. Upgrade to Growth for unlimited drafts.` }
-    }
-  }
 
   const title  = (formData.get('title')  as string)?.trim()
   const format = (formData.get('format') as ContentFormat) ?? 'linkedin_post'
@@ -517,7 +500,8 @@ export async function generateDraftFromSignal(
         ],
       }),
     })
-    if (!res.ok) throw new Error(`Groq returned ${res.status}`)
+    if (res.status === 429) throw new Error('Groq API quota exceeded — add your own API key in Settings to continue generating content.')
+    if (!res.ok) throw new Error(`Groq API error (${res.status}) — try again shortly.`)
     const data = await res.json()
     body = data.choices?.[0]?.message?.content ?? ''
   } catch (err) {
@@ -641,7 +625,8 @@ export async function generateDraftBody(
         ],
       }),
     })
-    if (!res.ok) throw new Error(`Groq returned ${res.status}`)
+    if (res.status === 429) throw new Error('Groq API quota exceeded — add your own API key in Settings to continue generating content.')
+    if (!res.ok) throw new Error(`Groq API error (${res.status}) — try again shortly.`)
     const data = await res.json()
     const body = data.choices?.[0]?.message?.content ?? ''
     return { body }
