@@ -1,19 +1,22 @@
 import { getAuthorProfile } from '@/app/actions/content'
 import { getWorkspaceSettings } from '@/app/actions/workspace'
 import { getTeamContext } from '@/app/actions/team'
+import { getPersonas } from '@/app/actions/personas'
 import { getWorkspaceMembership } from '@/lib/supabase/dal'
 import { AuthorProfileForm } from './_components/author-profile-form'
 import { ApiKeyForm } from './_components/api-key-form'
 import { ResendForm } from './_components/resend-form'
 import { TeamMembers } from './_components/team-members'
 import { WorkspaceNameForm } from './_components/workspace-name-form'
+import { PersonasManager } from './_components/personas-manager'
 
 export default async function SettingsPage() {
-  const [profile, wsSettings, teamCtx, membership] = await Promise.all([
+  const [profile, wsSettings, teamCtx, membership, personas] = await Promise.all([
     getAuthorProfile(),
     getWorkspaceSettings(),
     getTeamContext(),
     getWorkspaceMembership(),
+    getPersonas(),
   ])
 
   const workspace = membership?.workspaces as unknown as { name: string } | null
@@ -52,6 +55,18 @@ export default async function SettingsPage() {
             </p>
           </div>
           <AuthorProfileForm profile={profile} />
+        </section>
+
+        <div className="border-t" />
+
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-base font-medium">Audience personas</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Define the audience segments you write for. Vox uses these to filter customer intelligence and generate content tailored to each persona.
+            </p>
+          </div>
+          <PersonasManager initialPersonas={personas} />
         </section>
 
         <div className="border-t" />

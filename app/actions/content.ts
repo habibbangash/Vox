@@ -75,17 +75,31 @@ export type ContentActionState = { error?: string; success?: boolean; draftId?: 
 
 interface EntityRow { type: string; name: string; mention_count: number }
 
-async function getEntityIntelligenceBlock(workspaceId: string): Promise<string> {
-  const { data: rows } = await adminClient
+async function getEntityIntelligenceBlock(workspaceId: string, personaId?: string | null): Promise<string> {
+  let query = adminClient
     .from('entity_mentions')
-    .select('entities(type, name)')
+    .select('entities(type, name), document_id')
     .eq('workspace_id', workspaceId)
     .not('entities', 'is', null)
     .limit(500)
 
+  // If persona specified, restrict to documents tagged for that persona
+  if (personaId) {
+    const { data: taggedDocs } = await adminClient
+      .from('document_persona_tags')
+      .select('document_id')
+      .eq('persona_id', personaId)
+      .eq('workspace_id', workspaceId)
+      .limit(2000)
+
+    const docIds = (taggedDocs ?? []).map((r) => r.document_id)
+    if (docIds.length === 0) return ''
+    query = query.in('document_id', docIds)
+  }
+
+  const { data: rows } = await query
   if (!rows?.length) return ''
 
-  // Aggregate mention counts per entity
   const counts = new Map<string, EntityRow>()
   for (const row of rows) {
     const e = row.entities as unknown as { type: string; name: string } | null
@@ -129,7 +143,8 @@ async function getEntityIntelligenceBlock(workspaceId: string): Promise<string> 
 
   if (!lines.length) return ''
 
-  return `\nWorkspace intelligence (extracted from customer conversations):\n${lines.join('\n')}\nUse these entities to make the content feel grounded in real customer language and context.\n`
+  const personaLabel = personaId ? ' (filtered to selected persona)' : ''
+  return `\nWorkspace intelligence${personaLabel} — extracted from customer conversations:\n${lines.join('\n')}\nUse these entities to make the content feel grounded in real customer language.\n`
 }
 
 async function getWorkspaceId(userId: string): Promise<string | null> {
@@ -422,7 +437,8 @@ Focus on outcomes and customer language, not features. Honest, direct, no FUD.`,
 
 export async function generateDraftFromSignal(
   signalId: string,
-  format: ContentFormat
+  format: ContentFormat,
+  personaId?: string | null
 ): Promise<ContentActionState & { draftId?: string }> {
   const result = await requireWorkspace()
   if ('error' in result) return { error: result.error }
@@ -433,7 +449,7 @@ export async function generateDraftFromSignal(
   }
 
   // Load signal, author profile, and entity intelligence in parallel
-  const [{ data: signal }, { data: authorProfile }, entityIntel] = await Promise.all([
+  const [{ data: signal }, { data: authorProfile }, entityIntel, personaData] = await Promise.all([
     adminClient
       .from('signals')
       .select('*')
@@ -446,8 +462,12 @@ export async function generateDraftFromSignal(
       .eq('workspace_id', result.workspaceId)
       .eq('user_id', result.userId)
       .single(),
-    getEntityIntelligenceBlock(result.workspaceId),
+    getEntityIntelligenceBlock(result.workspaceId, personaId),
+    personaId
+      ? adminClient.from('personas').select('name, description').eq('id', personaId).single()
+      : Promise.resolve({ data: null }),
   ])
+  const persona = personaData.data as { name: string; description: string | null } | null
 
   if (!signal) return { error: 'Signal not found' }
 
@@ -477,7 +497,11 @@ export async function generateDraftFromSignal(
     ? `\n\nAuthor voice profile (${authorProfile.display_name ?? 'the author'}${authorProfile.role ? `, ${authorProfile.role}` : ''}):\n${authorProfile.voice_notes}`
     : ''
 
-  const systemPrompt = `You are a B2B content strategist ghostwriting for a SaaS practitioner. Your writing sounds like a thoughtful practitioner, not a marketer. Use plain language, avoid corporate jargon, and prioritise customer voice over brand voice.${voiceContext}${entityIntel}\n\n${snippetBlock}`
+  const personaContext = persona
+    ? `\n\nTarget audience persona: ${persona.name}${persona.description ? ` — ${persona.description}` : ''}.\nWrite specifically for this persona. Use the language, concerns, and context that this persona has expressed in customer conversations.`
+    : ''
+
+  const systemPrompt = `You are a B2B content strategist ghostwriting for a SaaS practitioner. Your writing sounds like a thoughtful practitioner, not a marketer. Use plain language, avoid corporate jargon, and prioritise customer voice over brand voice.${voiceContext}${personaContext}${entityIntel}\n\n${snippetBlock}`
 
   let body: string
   try {
@@ -530,7 +554,8 @@ export async function generateDraftFromSignal(
 }
 
 export async function generateDraftBody(
-  draftId: string
+  draftId: string,
+  personaId?: string | null
 ): Promise<{ body?: string; error?: string }> {
   const result = await requireWorkspace()
   if ('error' in result) return { error: result.error }
@@ -540,7 +565,7 @@ export async function generateDraftBody(
     return { error: 'No Groq API key configured — add one in Settings or set GROQ_API_KEY.' }
   }
 
-  const [{ data: draft }, { data: authorProfile }, { data: sources }, entityIntel] = await Promise.all([
+  const [{ data: draft }, { data: authorProfile }, { data: sources }, entityIntel, personaData] = await Promise.all([
     adminClient
       .from('content_drafts')
       .select('id, format, title, brief, author_profile_id')
@@ -558,8 +583,12 @@ export async function generateDraftBody(
       .select('source_documents(title, content)')
       .eq('draft_id', draftId)
       .limit(5),
-    getEntityIntelligenceBlock(result.workspaceId),
+    getEntityIntelligenceBlock(result.workspaceId, personaId),
+    personaId
+      ? adminClient.from('personas').select('name, description').eq('id', personaId).single()
+      : Promise.resolve({ data: null }),
   ])
+  const persona = personaData.data as { name: string; description: string | null } | null
 
   if (!draft) return { error: 'Draft not found' }
 
@@ -585,7 +614,11 @@ export async function generateDraftBody(
     battle_card:    'competitive battle card (bullet points, 200–400 words)',
   }
 
-  const systemPrompt = `You are a B2B content strategist ghostwriting for a SaaS practitioner. Use plain language, avoid marketing jargon, and write in first person where appropriate.${voiceContext}${entityIntel}`
+  const personaContext = persona
+    ? `\n\nTarget audience persona: ${persona.name}${persona.description ? ` — ${persona.description}` : ''}.\nWrite specifically for this persona using their language and concerns.`
+    : ''
+
+  const systemPrompt = `You are a B2B content strategist ghostwriting for a SaaS practitioner. Use plain language, avoid marketing jargon, and write in first person where appropriate.${voiceContext}${personaContext}${entityIntel}`
 
   const parts = [
     `Write a ${formatLabel[format] ?? format} about: "${brief.topic ?? draft.title}"`,

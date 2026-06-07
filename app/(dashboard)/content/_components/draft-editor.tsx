@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { updateDraft, deleteDraft, addDraftSource, removeDraftSource, getDraftSources, generateDraftBody, type ContentDraft } from '@/app/actions/content'
+import { type Persona } from '@/app/actions/personas'
 import { searchDocuments, type DocumentResult } from '@/app/actions/intelligence'
 import { publishDraftToLinkedIn, publishDraftAsEmail } from '@/app/actions/publish'
 
@@ -58,12 +59,13 @@ interface LinkedSource {
 interface DraftEditorProps {
   draft:              ContentDraft
   initialSources:     LinkedSource[]
+  personas?:          Persona[]
   defaultExpanded?:   boolean
   linkedInConnected?: boolean
   emailConfigured?:   boolean
 }
 
-export function DraftEditor({ draft, initialSources, defaultExpanded = false, linkedInConnected = false, emailConfigured = false }: DraftEditorProps) {
+export function DraftEditor({ draft, initialSources, personas = [], defaultExpanded = false, linkedInConnected = false, emailConfigured = false }: DraftEditorProps) {
   const [expanded, setExpanded] = useState(defaultExpanded)
   const [title,    setTitle]    = useState(draft.title)
   const [body,     setBody]     = useState(draft.body ?? '')
@@ -84,6 +86,8 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false, li
   const [publishError,    setPublishError]    = useState<string | null>(null)
   const [publishSuccess,  setPublishSuccess]  = useState(false)
   const [postUrl,         setPostUrl]         = useState<string | null>(draft.published_url ?? null)
+
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null)
 
   const [toEmail,         setToEmail]         = useState('')
   const [showEmailInput,  setShowEmailInput]  = useState(false)
@@ -153,7 +157,7 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false, li
   async function handleGenerate() {
     setIsGenerating(true)
     setGenerateError(null)
-    const result = await generateDraftBody(draft.id)
+    const result = await generateDraftBody(draft.id, selectedPersonaId)
     setIsGenerating(false)
     if (result.error) {
       setGenerateError(result.error)
@@ -420,6 +424,32 @@ export function DraftEditor({ draft, initialSources, defaultExpanded = false, li
                   <span className={`text-xs ${charCount > LINKEDIN_MAX ? 'text-destructive' : 'text-muted-foreground'}`}>
                     {charCount.toLocaleString()} / {LINKEDIN_MAX.toLocaleString()}
                   </span>
+                )}
+                {personas.length > 0 && (
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <button
+                      onClick={() => setSelectedPersonaId(null)}
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${
+                        selectedPersonaId === null
+                          ? 'bg-foreground text-background'
+                          : 'bg-muted text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      All
+                    </button>
+                    {personas.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => setSelectedPersonaId(p.id === selectedPersonaId ? null : p.id)}
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium transition-colors ${
+                          selectedPersonaId === p.id ? 'text-white' : 'bg-muted text-muted-foreground hover:text-foreground'
+                        }`}
+                        style={selectedPersonaId === p.id ? { backgroundColor: p.color } : {}}
+                      >
+                        {p.name}
+                      </button>
+                    ))}
+                  </div>
                 )}
                 <button
                   onClick={handleGenerate}
