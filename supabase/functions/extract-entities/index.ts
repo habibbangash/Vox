@@ -193,6 +193,7 @@ ${doc.content.slice(0, 12000)}
       context:      e.context?.slice(0, 1000) ?? null,
       confidence:   e.confidence ?? 1.0,
       mentioned_at: doc.metadata?.started_at ?? doc.ingested_at,
+      metadata:     {},
     })
   }
 
