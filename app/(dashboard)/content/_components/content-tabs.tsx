@@ -20,13 +20,12 @@ const TABS: { id: Tab; label: string }[] = [
 ]
 
 interface ContentTabsProps {
-  drafts:           ContentDraft[]
-  signals:          Signal[]
-  personas?:        Persona[]
-  emailConfigured?: boolean
+  drafts:    ContentDraft[]
+  signals:   Signal[]
+  personas?: Persona[]
 }
 
-export function ContentTabs({ drafts, signals, personas = [], emailConfigured = false }: ContentTabsProps) {
+export function ContentTabs({ drafts, signals, personas = [] }: ContentTabsProps) {
   const [activeTab,          setActiveTab]          = useState<Tab>('drafts')
   const [pendingFormat,      setPendingFormat]      = useState<string | null>(null)
   const [highlightDraftId,   setHighlightDraftId]   = useState<string | null>(null)
@@ -99,7 +98,6 @@ export function ContentTabs({ drafts, signals, personas = [], emailConfigured = 
           pendingFormat={pendingFormat}
           onPendingFormatConsumed={clearPendingFormat}
           highlightDraftId={highlightDraftId}
-          emailConfigured={emailConfigured}
         />
       )}
       {activeTab === 'templates' && <TemplatesTab onSelectTemplate={handleSelectTemplate} />}

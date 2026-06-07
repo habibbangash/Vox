@@ -1,6 +1,6 @@
 'use client'
 import { useState, useTransition, useEffect, useRef } from 'react'
-import { ChevronDown, ChevronUp, Clipboard, ClipboardCheck, Sparkles, Trash2, Loader2, Search, X, Check, Plus, Send, Download } from 'lucide-react'
+import { ChevronDown, ChevronUp, Clipboard, ClipboardCheck, Sparkles, Trash2, Loader2, Search, X, Check, Plus, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label'
 import { updateDraft, deleteDraft, addDraftSource, removeDraftSource, getDraftSources, generateDraftBody, type ContentDraft } from '@/app/actions/content'
 import { type Persona } from '@/app/actions/personas'
 import { searchDocuments, type DocumentResult } from '@/app/actions/intelligence'
-import { publishDraftAsEmail } from '@/app/actions/publish'
 
 const STATUS_OPTIONS = ['brief', 'draft', 'review', 'published'] as const
 const STATUS_STYLE: Record<string, string> = {
@@ -61,10 +60,9 @@ interface DraftEditorProps {
   initialSources:   LinkedSource[]
   personas?:        Persona[]
   defaultExpanded?: boolean
-  emailConfigured?: boolean
 }
 
-export function DraftEditor({ draft, initialSources, personas = [], defaultExpanded = false, emailConfigured = false }: DraftEditorProps) {
+export function DraftEditor({ draft, initialSources, personas = [], defaultExpanded = false }: DraftEditorProps) {
   const [expanded, setExpanded] = useState(defaultExpanded)
   const [title,    setTitle]    = useState(draft.title)
   const [body,     setBody]     = useState(draft.body ?? '')
@@ -83,12 +81,6 @@ export function DraftEditor({ draft, initialSources, personas = [], defaultExpan
   const [generateError,   setGenerateError]   = useState<string | null>(null)
 
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null)
-
-  const [toEmail,         setToEmail]         = useState('')
-  const [showEmailInput,  setShowEmailInput]  = useState(false)
-  const [isSendingEmail,  setIsSendingEmail]  = useState(false)
-  const [emailError,      setEmailError]      = useState<string | null>(null)
-  const [emailSuccess,    setEmailSuccess]    = useState(false)
 
   // Load persisted sources the first time the editor is expanded
   useEffect(() => {
@@ -161,22 +153,6 @@ export function DraftEditor({ draft, initialSources, personas = [], defaultExpan
       // Persist immediately — don't rely on the 1.5s auto-save timer since
       // the user may navigate away before it fires
       await updateDraft(draft.id, { title, body: result.body, status, brief: { ...draft.brief, topic } })
-    }
-  }
-
-  async function handleSendEmail() {
-    if (!toEmail.trim()) return
-    setIsSendingEmail(true)
-    setEmailError(null)
-    const result = await publishDraftAsEmail(draft.id, toEmail.trim())
-    setIsSendingEmail(false)
-    if (result.error) {
-      setEmailError(result.error)
-    } else {
-      setEmailSuccess(true)
-      setStatus('published')
-      setShowEmailInput(false)
-      setToEmail('')
     }
   }
 
@@ -472,39 +448,6 @@ export function DraftEditor({ draft, initialSources, personas = [], defaultExpan
             />
           </div>
 
-          {emailError && (
-            <p className="text-xs text-destructive rounded bg-destructive/10 px-2 py-1">{emailError}</p>
-          )}
-          {emailSuccess && (
-            <p className="text-xs text-green-600 rounded bg-green-500/10 px-2 py-1 flex items-center gap-1.5">
-              <Check className="size-3 shrink-0" />
-              Email sent successfully.
-            </p>
-          )}
-          {showEmailInput && draft.format === 'email_sequence' && (
-            <div className="flex gap-2">
-              <Input
-                type="email"
-                value={toEmail}
-                onChange={(e) => setToEmail(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSendEmail()}
-                placeholder="recipient@example.com"
-                className="h-9 text-sm flex-1"
-                autoFocus
-              />
-              <Button
-                size="sm"
-                onClick={handleSendEmail}
-                disabled={isSendingEmail || !toEmail.trim()}
-              >
-                {isSendingEmail ? <Loader2 className="size-3.5 animate-spin" /> : 'Send'}
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setShowEmailInput(false)}>
-                <X className="size-3.5" />
-              </Button>
-            </div>
-          )}
-
           {/* Save / delete */}
           <div className="flex items-center justify-between pt-1">
             <button
@@ -527,18 +470,6 @@ export function DraftEditor({ draft, initialSources, personas = [], defaultExpan
                 <span className="text-xs text-green-500 flex items-center gap-1">
                   <Check className="size-3" /> Saved
                 </span>
-              )}
-              {draft.format === 'email_sequence' && body && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => emailConfigured ? setShowEmailInput((v) => !v) : window.location.href = '/settings'}
-                  disabled={isSendingEmail}
-                  title={!emailConfigured ? 'Configure Resend in Settings first' : 'Send as email'}
-                >
-                  <Send className="size-3.5 mr-1" />
-                  {emailConfigured ? 'Send Email' : 'Configure Email'}
-                </Button>
               )}
               <Button size="sm" onClick={save} disabled={isSaving} variant="outline">
                 Save
