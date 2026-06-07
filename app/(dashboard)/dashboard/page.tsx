@@ -61,10 +61,13 @@ export default async function DashboardPage() {
     competitor_mention: 'Competitor',
   }
   const FORMAT_LABEL: Record<string, string> = {
-    linkedin_post:  'LinkedIn',
-    email_sequence: 'Email',
-    blog_post:      'Blog',
-    battle_card:    'Battle card',
+    linkedin_post:   'LinkedIn',
+    email_sequence:  'Cold email',
+    blog_post:       'Blog',
+    battle_card:     'Battle card',
+    newsletter:      'Newsletter',
+    marketing_email: 'Mktg email',
+    linkedin_ad:     'LinkedIn ad',
   }
   const STATUS_STYLE: Record<string, string> = {
     brief:     'text-muted-foreground',

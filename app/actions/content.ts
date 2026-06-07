@@ -16,7 +16,7 @@ async function resolveGroqKey(workspaceId: string): Promise<string | null> {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type ContentFormat = 'linkedin_post' | 'email_sequence' | 'blog_post' | 'battle_card'
+export type ContentFormat = 'linkedin_post' | 'email_sequence' | 'blog_post' | 'battle_card' | 'newsletter' | 'marketing_email' | 'linkedin_ad'
 export type DraftStatus   = 'brief' | 'draft' | 'review' | 'published'
 
 export interface Brief {
@@ -393,29 +393,61 @@ export async function computeSignals(): Promise<{ error?: string }> {
 
 // ─── Draft generation from signal ────────────────────────────────────────────
 
-const SIGNAL_PROMPTS: Record<SignalType, (topic: string, format: ContentFormat) => string> = {
-  recurring_topic: (topic, format) => format === 'linkedin_post'
-    ? `Write a LinkedIn post (150–250 words) about "${topic}" based on customer conversations.
+function signalPrompt(topic: string, format: ContentFormat, signalType: string): string {
+  if (format === 'newsletter') {
+    return `Write a B2B product newsletter section (400–600 words) about "${topic}".
+Structure: short intro hook → 2–3 insight bullets from customer conversations → one concrete takeaway or recommendation → a brief closing that invites a reply.
+Use a conversational, human tone. No marketing fluff.`
+  }
+  if (format === 'marketing_email') {
+    return `Write a B2B nurture/marketing email (150–200 words) about "${topic}".
+Subject line first (under 50 chars), then the body. Open with a customer pain point, offer one clear value prop, end with a soft CTA. No aggressive sales language.`
+  }
+  if (format === 'linkedin_ad') {
+    return `Write LinkedIn ad copy for the topic "${topic}".
+Format exactly as:
+Headline: [6 words max, punchy]
+Body: [60–75 words, lead with the customer problem, offer a clear outcome]
+CTA: [4 words max, e.g. "See how it works"]
+No hashtags. No emojis. Direct and specific.`
+  }
+
+  // Original format-specific prompts
+  const isLinkedIn = format === 'linkedin_post'
+  switch (signalType) {
+    case 'recurring_topic':
+      return isLinkedIn
+        ? `Write a LinkedIn post (150–250 words) about "${topic}" based on customer conversations.
 Open with a bold, counterintuitive insight. Weave in customer language naturally. Close with a question or observation that invites comments. Do not name the company or use marketing speak.`
-    : `Write a short cold email (100–150 words) that opens a conversation about "${topic}".
-Use the customer language in the snippets as the hook. One CTA only. No fluff.`,
-
-  objection_trend: (topic, format) => format === 'linkedin_post'
-    ? `Write a LinkedIn post (150–250 words) that directly addresses the objection: "${topic}".
+        : `Write a short cold email (100–150 words) that opens a conversation about "${topic}".
+Use the customer language in the snippets as the hook. One CTA only. No fluff.`
+    case 'objection_trend':
+      return isLinkedIn
+        ? `Write a LinkedIn post (150–250 words) that directly addresses the objection: "${topic}".
 Acknowledge the concern honestly, reframe it with a surprising insight from real customer conversations, and end with a takeaway. Do not be defensive or salesy.`
-    : `Write a battle-card-style email (100–150 words) that proactively addresses "${topic}" for a prospect who might have this concern. One clear, honest answer. One CTA.`,
-
-  buying_signal: (topic, format) => format === 'linkedin_post'
-    ? `Write a LinkedIn post (150–250 words) capitalising on momentum around "${topic}".
+        : `Write a battle-card-style email (100–150 words) that proactively addresses "${topic}" for a prospect who might have this concern. One clear, honest answer. One CTA.`
+    case 'buying_signal':
+      return isLinkedIn
+        ? `Write a LinkedIn post (150–250 words) capitalising on momentum around "${topic}".
 Reference real customer language to show you understand the trend. Position a point of view. End with a question that invites replies.`
-    : `Write an outreach email (100–150 words) to a prospect who has shown interest in "${topic}".
-Personalise using the customer snippets. One CTA, no pressure.`,
-
-  competitor_mention: (topic, format) => format === 'linkedin_post'
-    ? `Write a LinkedIn post (150–250 words) about the landscape around "${topic}" without naming competitors.
+        : `Write an outreach email (100–150 words) to a prospect who has shown interest in "${topic}".
+Personalise using the customer snippets. One CTA, no pressure.`
+    case 'competitor_mention':
+      return isLinkedIn
+        ? `Write a LinkedIn post (150–250 words) about the landscape around "${topic}" without naming competitors.
 Use customer language to show you understand what buyers care about when evaluating options. Differentiate through point of view, not feature lists.`
-    : `Write a comparison email (100–150 words) for a prospect evaluating "${topic}".
-Focus on outcomes and customer language, not features. Honest, direct, no FUD.`,
+        : `Write a comparison email (100–150 words) for a prospect evaluating "${topic}".
+Focus on outcomes and customer language, not features. Honest, direct, no FUD.`
+    default:
+      return `Write a ${format.replace(/_/g, ' ')} about "${topic}" based on the customer context provided.`
+  }
+}
+
+const SIGNAL_PROMPTS: Record<SignalType, (topic: string, format: ContentFormat) => string> = {
+  recurring_topic:    (t, f) => signalPrompt(t, f, 'recurring_topic'),
+  objection_trend:    (t, f) => signalPrompt(t, f, 'objection_trend'),
+  buying_signal:      (t, f) => signalPrompt(t, f, 'buying_signal'),
+  competitor_mention: (t, f) => signalPrompt(t, f, 'competitor_mention'),
 }
 
 export async function generateDraftFromSignal(
@@ -486,6 +518,16 @@ export async function generateDraftFromSignal(
 
   const systemPrompt = `You are a B2B content strategist ghostwriting for a SaaS practitioner. Your writing sounds like a thoughtful practitioner, not a marketer. Use plain language, avoid corporate jargon, and prioritise customer voice over brand voice.${voiceContext}${personaContext}${entityIntel}\n\n${snippetBlock}`
 
+  const MAX_TOKENS_BY_FORMAT: Record<ContentFormat, number> = {
+    linkedin_post:   600,
+    email_sequence:  400,
+    blog_post:       900,
+    battle_card:     700,
+    newsletter:      1200,
+    marketing_email: 400,
+    linkedin_ad:     300,
+  }
+
   let body: string
   try {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -493,7 +535,7 @@ export async function generateDraftFromSignal(
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqKey}` },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
-        max_tokens: 600,
+        max_tokens: MAX_TOKENS_BY_FORMAT[format] ?? 600,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user',   content: userPrompt },
@@ -508,7 +550,16 @@ export async function generateDraftFromSignal(
     return { error: err instanceof Error ? err.message : 'Groq API error' }
   }
 
-  const title = `${signal.title} — ${format === 'linkedin_post' ? 'LinkedIn Post' : format === 'email_sequence' ? 'Email' : format}`
+  const FORMAT_TITLE_SUFFIX: Record<ContentFormat, string> = {
+    linkedin_post:   'LinkedIn Post',
+    email_sequence:  'Cold Email',
+    blog_post:       'Blog Post',
+    battle_card:     'Battle Card',
+    newsletter:      'Newsletter',
+    marketing_email: 'Marketing Email',
+    linkedin_ad:     'LinkedIn Ad',
+  }
+  const title = `${signal.title} — ${FORMAT_TITLE_SUFFIX[format] ?? format}`
 
   const { data: draft, error: insertErr } = await adminClient
     .from('content_drafts')
@@ -592,10 +643,23 @@ export async function generateDraftBody(
     : ''
 
   const formatLabel: Record<ContentFormat, string> = {
-    linkedin_post:  'LinkedIn post (150–250 words)',
-    email_sequence: 'cold outreach email (100–150 words)',
-    blog_post:      'blog post introduction (300–500 words)',
-    battle_card:    'competitive battle card (bullet points, 200–400 words)',
+    linkedin_post:   'LinkedIn post (150–250 words)',
+    email_sequence:  'cold outreach email (100–150 words)',
+    blog_post:       'blog post introduction (300–500 words)',
+    battle_card:     'competitive battle card (bullet points, 200–400 words)',
+    newsletter:      'product newsletter section (400–600 words, include a hook, 2–3 insight bullets, and a clear takeaway)',
+    marketing_email: 'marketing/nurture email (150–200 words, subject line first, clear value prop, soft CTA)',
+    linkedin_ad:     'LinkedIn ad copy (Headline: 6 words max, Body: 60–75 words, CTA: 4 words max)',
+  }
+
+  const maxTokensByFormat: Record<ContentFormat, number> = {
+    linkedin_post:   600,
+    email_sequence:  400,
+    blog_post:       900,
+    battle_card:     700,
+    newsletter:      1200,
+    marketing_email: 400,
+    linkedin_ad:     300,
   }
 
   const personaContext = persona
@@ -618,7 +682,7 @@ export async function generateDraftBody(
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqKey}` },
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
-        max_tokens: 800,
+        max_tokens: maxTokensByFormat[format] ?? 800,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user',   content: parts },

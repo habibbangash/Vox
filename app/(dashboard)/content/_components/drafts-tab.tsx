@@ -9,11 +9,14 @@ import { NewDraftPanel } from './new-draft-panel'
 
 const STATUS_OPTIONS = ['all', 'brief', 'draft', 'review', 'published'] as const
 const FORMAT_OPTIONS = [
-  { value: 'all',            label: 'All formats' },
-  { value: 'linkedin_post',  label: 'LinkedIn'    },
-  { value: 'email_sequence', label: 'Email'       },
-  { value: 'blog_post',      label: 'Blog'        },
-  { value: 'battle_card',    label: 'Battle card' },
+  { value: 'all',             label: 'All formats'   },
+  { value: 'linkedin_post',   label: 'LinkedIn'      },
+  { value: 'newsletter',      label: 'Newsletter'    },
+  { value: 'blog_post',       label: 'Blog'          },
+  { value: 'email_sequence',  label: 'Cold email'    },
+  { value: 'marketing_email', label: 'Mktg email'    },
+  { value: 'linkedin_ad',     label: 'LinkedIn ad'   },
+  { value: 'battle_card',     label: 'Battle card'   },
 ] as const
 
 type StatusFilter = typeof STATUS_OPTIONS[number]

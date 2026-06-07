@@ -17,10 +17,13 @@ const STATUS_STYLE: Record<string, string> = {
   published: 'bg-green-500/10 text-green-600',
 }
 const FORMAT_LABELS: Record<string, string> = {
-  linkedin_post:  'LinkedIn Post',
-  email_sequence: 'Email Sequence',
-  blog_post:      'Blog Post',
-  battle_card:    'Battle Card',
+  linkedin_post:   'LinkedIn Post',
+  email_sequence:  'Cold Email',
+  blog_post:       'Blog Post',
+  battle_card:     'Battle Card',
+  newsletter:      'Newsletter',
+  marketing_email: 'Marketing Email',
+  linkedin_ad:     'LinkedIn Ad',
 }
 const SOURCE_STYLE: Record<string, { label: string; style: string }> = {
   krisp:   { label: 'Meeting',  style: 'bg-violet-500/10 text-violet-600' },

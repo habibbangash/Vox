@@ -3,10 +3,13 @@ import { ExternalLink, Send } from 'lucide-react'
 import { type ContentDraft } from '@/app/actions/content'
 
 const FORMAT_LABELS: Record<string, string> = {
-  linkedin_post:  'LinkedIn Post',
-  email_sequence: 'Email Sequence',
-  blog_post:      'Blog Post',
-  battle_card:    'Battle Card',
+  linkedin_post:   'LinkedIn Post',
+  email_sequence:  'Cold Email',
+  blog_post:       'Blog Post',
+  battle_card:     'Battle Card',
+  newsletter:      'Newsletter',
+  marketing_email: 'Marketing Email',
+  linkedin_ad:     'LinkedIn Ad',
 }
 
 interface PublishedTabProps {

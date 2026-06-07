@@ -3,10 +3,13 @@ import { ExternalLink } from 'lucide-react'
 import { type ContentDraft } from '@/app/actions/content'
 
 const FORMAT_LABELS: Record<string, string> = {
-  linkedin_post:  'LinkedIn',
-  email_sequence: 'Email',
-  blog_post:      'Blog',
-  battle_card:    'Battle card',
+  linkedin_post:   'LinkedIn',
+  email_sequence:  'Cold email',
+  blog_post:       'Blog',
+  battle_card:     'Battle card',
+  newsletter:      'Newsletter',
+  marketing_email: 'Mktg email',
+  linkedin_ad:     'LinkedIn ad',
 }
 const STATUS_STYLE: Record<string, string> = {
   published: 'bg-green-500/10 text-green-600',

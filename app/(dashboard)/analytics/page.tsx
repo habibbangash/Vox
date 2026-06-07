@@ -224,8 +224,9 @@ export default async function AnalyticsPage() {
                 .sort((a, b) => b[1] - a[1])
                 .map(([fmt, count]) => {
                   const labels: Record<string, string> = {
-                    linkedin_post: 'LinkedIn Post', email_sequence: 'Email Sequence',
+                    linkedin_post: 'LinkedIn Post', email_sequence: 'Cold Email',
                     blog_post: 'Blog Post', battle_card: 'Battle Card',
+                    newsletter: 'Newsletter', marketing_email: 'Marketing Email', linkedin_ad: 'LinkedIn Ad',
                   }
                   return (
                     <BarRow

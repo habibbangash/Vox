@@ -221,13 +221,16 @@ export function SignalsTab({ signals, personas = [], onDraftCreated }: SignalsTa
                     </p>
                     <div className="flex items-center gap-2">
                       <Sparkles className="size-3 text-muted-foreground shrink-0" />
-                      {(['linkedin_post', 'email_sequence', 'blog_post', 'battle_card'] as ContentFormat[]).map((fmt) => {
+                      {(['linkedin_post', 'newsletter', 'blog_post', 'email_sequence', 'marketing_email', 'linkedin_ad', 'battle_card'] as ContentFormat[]).map((fmt) => {
                         const fmtKey = `${signal.id}:${fmt}`
                         const fmtLabel: Record<ContentFormat, string> = {
-                          linkedin_post:  'LinkedIn',
-                          email_sequence: 'Email',
-                          blog_post:      'Blog',
-                          battle_card:    'Battle card',
+                          linkedin_post:   'LinkedIn',
+                          newsletter:      'Newsletter',
+                          blog_post:       'Blog',
+                          email_sequence:  'Cold email',
+                          marketing_email: 'Mktg email',
+                          linkedin_ad:     'LinkedIn ad',
+                          battle_card:     'Battle card',
                         }
                         return (
                           <button

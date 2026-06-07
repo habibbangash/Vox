@@ -28,10 +28,13 @@ const SIGNAL_LABEL: Record<SignalType, string> = {
 }
 
 const FORMATS: { value: ContentFormat; label: string; description: string; emoji: string }[] = [
-  { value: 'linkedin_post',  label: 'LinkedIn post',   emoji: '💼', description: '~300 words, thought leadership' },
-  { value: 'email_sequence', label: 'Email',           emoji: '📧', description: 'Subject + body, 1-2 paragraphs' },
-  { value: 'blog_post',      label: 'Blog post',       emoji: '✍️', description: 'Long-form, 500+ words'          },
-  { value: 'battle_card',    label: 'Battle card',     emoji: '⚔️', description: 'Sales enablement one-pager'     },
+  { value: 'linkedin_post',   label: 'LinkedIn post',   emoji: '💼', description: '~300 words, thought leadership'  },
+  { value: 'newsletter',      label: 'Newsletter',      emoji: '📰', description: '400–600 words, insight + hook'   },
+  { value: 'blog_post',       label: 'Blog post',       emoji: '✍️', description: 'Long-form, 500+ words'           },
+  { value: 'email_sequence',  label: 'Cold email',      emoji: '📧', description: 'Subject + body, 100–150 words'   },
+  { value: 'marketing_email', label: 'Marketing email', emoji: '📣', description: 'Nurture email, 150–200 words'    },
+  { value: 'linkedin_ad',     label: 'LinkedIn ad',     emoji: '🎯', description: 'Headline + 75-word body + CTA'   },
+  { value: 'battle_card',     label: 'Battle card',     emoji: '⚔️', description: 'Sales enablement one-pager'      },
 ]
 
 type Step = 'pick-signal' | 'pick-format' | 'generating' | 'done'
