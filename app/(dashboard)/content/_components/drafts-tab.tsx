@@ -20,16 +20,15 @@ type StatusFilter = typeof STATUS_OPTIONS[number]
 type FormatFilter = typeof FORMAT_OPTIONS[number]['value']
 
 interface DraftsTabProps {
-  drafts:                    ContentDraft[]
-  personas?:                 Persona[]
-  pendingFormat?:            string | null
-  onPendingFormatConsumed?:  () => void
-  highlightDraftId?:         string | null
-  linkedInConnected?:        boolean
-  emailConfigured?:          boolean
+  drafts:                   ContentDraft[]
+  personas?:                Persona[]
+  pendingFormat?:           string | null
+  onPendingFormatConsumed?: () => void
+  highlightDraftId?:        string | null
+  emailConfigured?:         boolean
 }
 
-export function DraftsTab({ drafts, personas = [], pendingFormat, onPendingFormatConsumed, highlightDraftId, linkedInConnected = false, emailConfigured = false }: DraftsTabProps) {
+export function DraftsTab({ drafts, personas = [], pendingFormat, onPendingFormatConsumed, highlightDraftId, emailConfigured = false }: DraftsTabProps) {
   const [showNew,        setShowNew]        = useState(false)
   const [newFormat,      setNewFormat]      = useState('linkedin_post')
   const [statusFilter,   setStatusFilter]   = useState<StatusFilter>('all')
@@ -131,7 +130,6 @@ export function DraftsTab({ drafts, personas = [], pendingFormat, onPendingForma
                 personas={personas}
                 initialSources={[]}
                 defaultExpanded={draft.id === highlightDraftId}
-                linkedInConnected={linkedInConnected}
                 emailConfigured={emailConfigured}
               />
             ))}

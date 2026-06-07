@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { updateDraft, deleteDraft, addDraftSource, removeDraftSource, getDraftSources, generateDraftBody, type ContentDraft } from '@/app/actions/content'
 import { type Persona } from '@/app/actions/personas'
 import { searchDocuments, type DocumentResult } from '@/app/actions/intelligence'
-import { publishDraftToLinkedIn, publishDraftAsEmail } from '@/app/actions/publish'
+import { publishDraftAsEmail } from '@/app/actions/publish'
 
 const STATUS_OPTIONS = ['brief', 'draft', 'review', 'published'] as const
 const STATUS_STYLE: Record<string, string> = {
@@ -57,15 +57,14 @@ interface LinkedSource {
 }
 
 interface DraftEditorProps {
-  draft:              ContentDraft
-  initialSources:     LinkedSource[]
-  personas?:          Persona[]
-  defaultExpanded?:   boolean
-  linkedInConnected?: boolean
-  emailConfigured?:   boolean
+  draft:            ContentDraft
+  initialSources:   LinkedSource[]
+  personas?:        Persona[]
+  defaultExpanded?: boolean
+  emailConfigured?: boolean
 }
 
-export function DraftEditor({ draft, initialSources, personas = [], defaultExpanded = false, linkedInConnected = false, emailConfigured = false }: DraftEditorProps) {
+export function DraftEditor({ draft, initialSources, personas = [], defaultExpanded = false, emailConfigured = false }: DraftEditorProps) {
   const [expanded, setExpanded] = useState(defaultExpanded)
   const [title,    setTitle]    = useState(draft.title)
   const [body,     setBody]     = useState(draft.body ?? '')
@@ -82,10 +81,6 @@ export function DraftEditor({ draft, initialSources, personas = [], defaultExpan
   const [isDeleting,      startDelete]        = useTransition()
   const [isGenerating,    setIsGenerating]    = useState(false)
   const [generateError,   setGenerateError]   = useState<string | null>(null)
-  const [isPublishing,    setIsPublishing]    = useState(false)
-  const [publishError,    setPublishError]    = useState<string | null>(null)
-  const [publishSuccess,  setPublishSuccess]  = useState(false)
-  const [postUrl,         setPostUrl]         = useState<string | null>(draft.published_url ?? null)
 
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null)
 
@@ -166,20 +161,6 @@ export function DraftEditor({ draft, initialSources, personas = [], defaultExpan
       // Persist immediately — don't rely on the 1.5s auto-save timer since
       // the user may navigate away before it fires
       await updateDraft(draft.id, { title, body: result.body, status, brief: { ...draft.brief, topic } })
-    }
-  }
-
-  async function handlePublish() {
-    setIsPublishing(true)
-    setPublishError(null)
-    const result = await publishDraftToLinkedIn(draft.id)
-    setIsPublishing(false)
-    if (result.error) {
-      setPublishError(result.error)
-    } else {
-      setPublishSuccess(true)
-      setStatus('published')
-      if (result.postUrl) setPostUrl(result.postUrl)
     }
   }
 
@@ -491,26 +472,6 @@ export function DraftEditor({ draft, initialSources, personas = [], defaultExpan
             />
           </div>
 
-          {/* Publish errors / success */}
-          {publishError && (
-            <p className="text-xs text-destructive rounded bg-destructive/10 px-2 py-1">{publishError}</p>
-          )}
-          {(publishSuccess || postUrl) && (
-            <p className="text-xs text-green-600 rounded bg-green-500/10 px-2 py-1 flex items-center gap-1.5">
-              <Check className="size-3 shrink-0" />
-              {publishSuccess ? 'Published to LinkedIn' : 'Published'}
-              {postUrl && (
-                <a
-                  href={postUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline underline-offset-2 hover:text-green-700"
-                >
-                  View post
-                </a>
-              )}
-            </p>
-          )}
           {emailError && (
             <p className="text-xs text-destructive rounded bg-destructive/10 px-2 py-1">{emailError}</p>
           )}
@@ -566,20 +527,6 @@ export function DraftEditor({ draft, initialSources, personas = [], defaultExpan
                 <span className="text-xs text-green-500 flex items-center gap-1">
                   <Check className="size-3" /> Saved
                 </span>
-              )}
-              {draft.format === 'linkedin_post' && body && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handlePublish}
-                  disabled={isPublishing || !linkedInConnected}
-                  title={!linkedInConnected ? 'Connect LinkedIn in Sources first' : 'Publish to LinkedIn'}
-                >
-                  {isPublishing
-                    ? <Loader2 className="size-3.5 animate-spin mr-1" />
-                    : <Send className="size-3.5 mr-1" />}
-                  {linkedInConnected ? 'Publish' : 'Connect LinkedIn'}
-                </Button>
               )}
               {draft.format === 'email_sequence' && body && (
                 <Button
