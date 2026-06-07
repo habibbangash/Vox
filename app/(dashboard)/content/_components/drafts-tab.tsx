@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Plus, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { type ContentDraft } from '@/app/actions/content'
+import { type Persona } from '@/app/actions/personas'
 import { DraftEditor } from './draft-editor'
 import { NewDraftPanel } from './new-draft-panel'
 
@@ -20,6 +21,7 @@ type FormatFilter = typeof FORMAT_OPTIONS[number]['value']
 
 interface DraftsTabProps {
   drafts:                    ContentDraft[]
+  personas?:                 Persona[]
   pendingFormat?:            string | null
   onPendingFormatConsumed?:  () => void
   highlightDraftId?:         string | null
@@ -27,7 +29,7 @@ interface DraftsTabProps {
   emailConfigured?:          boolean
 }
 
-export function DraftsTab({ drafts, pendingFormat, onPendingFormatConsumed, highlightDraftId, linkedInConnected = false, emailConfigured = false }: DraftsTabProps) {
+export function DraftsTab({ drafts, personas = [], pendingFormat, onPendingFormatConsumed, highlightDraftId, linkedInConnected = false, emailConfigured = false }: DraftsTabProps) {
   const [showNew,        setShowNew]        = useState(false)
   const [newFormat,      setNewFormat]      = useState('linkedin_post')
   const [statusFilter,   setStatusFilter]   = useState<StatusFilter>('all')
@@ -126,6 +128,7 @@ export function DraftsTab({ drafts, pendingFormat, onPendingFormatConsumed, high
               <DraftEditor
                 key={draft.id}
                 draft={draft}
+                personas={personas}
                 initialSources={[]}
                 defaultExpanded={draft.id === highlightDraftId}
                 linkedInConnected={linkedInConnected}

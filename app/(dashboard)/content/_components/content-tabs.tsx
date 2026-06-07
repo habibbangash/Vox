@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { type ContentDraft, type Signal } from '@/app/actions/content'
+import { type Persona } from '@/app/actions/personas'
 import { SignalsTab } from './signals-tab'
 import { DraftsTab } from './drafts-tab'
 import { TemplatesTab } from './templates-tab'
@@ -21,11 +22,12 @@ const TABS: { id: Tab; label: string }[] = [
 interface ContentTabsProps {
   drafts:             ContentDraft[]
   signals:            Signal[]
+  personas?:          Persona[]
   linkedInConnected?: boolean
   emailConfigured?:   boolean
 }
 
-export function ContentTabs({ drafts, signals, linkedInConnected = false, emailConfigured = false }: ContentTabsProps) {
+export function ContentTabs({ drafts, signals, personas = [], linkedInConnected = false, emailConfigured = false }: ContentTabsProps) {
   const [activeTab,          setActiveTab]          = useState<Tab>('drafts')
   const [pendingFormat,      setPendingFormat]      = useState<string | null>(null)
   const [highlightDraftId,   setHighlightDraftId]   = useState<string | null>(null)
@@ -87,12 +89,14 @@ export function ContentTabs({ drafts, signals, linkedInConnected = false, emailC
       {activeTab === 'signals'   && (
         <SignalsTab
           signals={signals}
+          personas={personas}
           onDraftCreated={(draftId) => { setHighlightDraftId(draftId); setActiveTab('drafts') }}
         />
       )}
       {activeTab === 'drafts'    && (
         <DraftsTab
           drafts={drafts}
+          personas={personas}
           pendingFormat={pendingFormat}
           onPendingFormatConsumed={clearPendingFormat}
           highlightDraftId={highlightDraftId}

@@ -2,6 +2,7 @@
 import { useState, useTransition } from 'react'
 import { AlertCircle, Loader2, RefreshCw, Sparkles, Star, TrendingUp, Zap, Swords, X } from 'lucide-react'
 import { type Signal, type SignalType, type ContentFormat, computeSignals, generateDraftFromSignal, dismissSignal, pinSignal } from '@/app/actions/content'
+import { type Persona } from '@/app/actions/personas'
 import { useRouter } from 'next/navigation'
 
 const SIGNAL_META: Record<SignalType, { label: string; icon: React.ComponentType<{ className?: string }>; chip: string }> = {
@@ -21,10 +22,11 @@ const FILTER_OPTIONS: { value: SignalType | 'all'; label: string }[] = [
 
 interface SignalsTabProps {
   signals:        Signal[]
+  personas?:      Persona[]
   onDraftCreated: (draftId: string) => void
 }
 
-export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
+export function SignalsTab({ signals, personas = [], onDraftCreated }: SignalsTabProps) {
   const router = useRouter()
   const [refreshPending, startRefresh] = useTransition()
   const [generating, setGenerating] = useState<string | null>(null)
@@ -34,6 +36,7 @@ export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(
     new Set(signals.filter(s => s.pinned_at).map(s => s.id))
   )
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null)
 
   const visible = signals
     .filter(s => !dismissedIds.has(s.id))
@@ -72,7 +75,7 @@ export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
     const key = `${signalId}:${format}`
     setGenerating(key)
     setGenError(null)
-    const result = await generateDraftFromSignal(signalId, format)
+    const result = await generateDraftFromSignal(signalId, format, selectedPersonaId)
     setGenerating(null)
     if (result?.error) {
       setGenError(result.error)
@@ -98,6 +101,36 @@ export function SignalsTab({ signals, onDraftCreated }: SignalsTabProps) {
 
       {genError && (
         <p className="text-xs text-destructive rounded-md bg-destructive/10 px-3 py-2">{genError}</p>
+      )}
+
+      {personas.length > 0 && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs text-muted-foreground">Persona:</span>
+          <button
+            onClick={() => setSelectedPersonaId(null)}
+            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+              selectedPersonaId === null
+                ? 'bg-foreground text-background'
+                : 'bg-muted text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            All
+          </button>
+          {personas.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => setSelectedPersonaId(p.id === selectedPersonaId ? null : p.id)}
+              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                selectedPersonaId === p.id
+                  ? 'text-white'
+                  : 'bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+              style={selectedPersonaId === p.id ? { backgroundColor: p.color } : {}}
+            >
+              {p.name}
+            </button>
+          ))}
+        </div>
       )}
 
       {visible.length > 0 ? (
