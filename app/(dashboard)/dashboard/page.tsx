@@ -3,9 +3,11 @@ import { FileText, Layers, TrendingUp, Zap, CheckCircle2, Circle } from 'lucide-
 import { verifySession, getWorkspaceMembership } from '@/lib/supabase/dal'
 import { adminClient } from '@/lib/supabase/admin'
 import { getWorkspaceSettings } from '@/app/actions/workspace'
+import { getWorkspaceGraph } from '@/app/actions/intelligence'
 import { relativeTime } from '@/lib/utils'
 import { WorkflowDiagram } from './_components/workflow-diagram'
 import { OnboardingComplete } from './_components/onboarding-complete'
+import { DashboardKnowledgeGraph } from './_components/dashboard-knowledge-graph'
 
 export default async function DashboardPage() {
   const { user } = await verifySession()
@@ -22,6 +24,7 @@ export default async function DashboardPage() {
     { data: recentDrafts },
     { data: connections },
     wsSettings,
+    graphData,
   ] = await Promise.all([
     workspaceId
       ? adminClient.from('source_documents').select('*', { count: 'exact', head: true }).eq('workspace_id', workspaceId)
@@ -45,6 +48,7 @@ export default async function DashboardPage() {
       ? adminClient.from('source_connections').select('source_type, display_name, status, last_synced_at, synced_count').eq('workspace_id', workspaceId).eq('status', 'active')
       : Promise.resolve({ data: [] }),
     getWorkspaceSettings(),
+    getWorkspaceGraph(60),
   ])
 
   const stats = [
@@ -290,6 +294,9 @@ export default async function DashboardPage() {
           </div>
         </section>
       )}
+
+      {/* Entity knowledge graph */}
+      <DashboardKnowledgeGraph data={graphData} />
     </div>
   )
 }
