@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
-import { Montserrat, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { Plus_Jakarta_Sans, Geist_Mono, DM_Sans } from "next/font/google";
 import "./globals.css";
 
-const montserrat = Montserrat({
+const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -12,10 +14,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-instrument-serif",
+const dmSans = DM_Sans({
+  variable: "--font-display",
   subsets: ["latin"],
-  weight: "400",
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -31,7 +34,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${montserrat.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full antialiased`}
+      className={`${plusJakartaSans.variable} ${geistMono.variable} ${dmSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

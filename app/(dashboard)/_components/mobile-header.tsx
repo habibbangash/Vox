@@ -33,8 +33,8 @@ export function MobileHeader({ workspaceName }: MobileHeaderProps) {
   return (
     <>
       {/* Top bar */}
-      <header className="flex sm:hidden items-center justify-between border-b bg-card px-4 h-12 shrink-0">
-        <span className="text-lg font-bold tracking-tight">Vox</span>
+      <header className="flex sm:hidden items-center justify-between border-b bg-background border-border px-4 h-12 shrink-0">
+        <span className="text-lg font-bold tracking-tight font-heading text-primary">Vox</span>
         <button
           onClick={() => setOpen(true)}
           className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -52,18 +52,18 @@ export function MobileHeader({ workspaceName }: MobileHeaderProps) {
         />
       )}
 
-      {/* Drawer */}
+      {/* Drawer — forest green, matches desktop sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-card border-r shadow-xl transition-transform duration-200 sm:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-sidebar border-r border-sidebar-border shadow-xl transition-transform duration-200 sm:hidden ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 h-12 border-b shrink-0">
-          <span className="text-lg font-bold tracking-tight">Vox</span>
+        <div className="flex items-center justify-between px-4 h-12 border-b border-sidebar-border shrink-0">
+          <span className="text-lg font-bold tracking-tight font-heading text-sidebar-foreground">Vox</span>
           <button
             onClick={() => setOpen(false)}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+            className="p-1.5 rounded-md text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
             aria-label="Close menu"
           >
             <X className="size-5" />
@@ -71,9 +71,9 @@ export function MobileHeader({ workspaceName }: MobileHeaderProps) {
         </div>
 
         {/* Workspace */}
-        <div className="px-4 py-3 border-b">
-          <p className="text-xs text-muted-foreground">Workspace</p>
-          <p className="text-sm font-medium truncate">{workspaceName}</p>
+        <div className="px-4 py-3 border-b border-sidebar-border">
+          <p className="text-xs text-sidebar-foreground/60">Workspace</p>
+          <p className="text-sm font-medium truncate text-sidebar-foreground">{workspaceName}</p>
         </div>
 
         {/* Nav links */}
@@ -84,10 +84,10 @@ export function MobileHeader({ workspaceName }: MobileHeaderProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-2.5 px-2 py-2 rounded-md text-sm transition-colors ${
+                className={`flex items-center gap-2.5 py-2 text-sm transition-colors ${
                   active
-                    ? 'bg-muted text-foreground font-medium'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    ? 'pl-[9px] border-l-[3px] border-sidebar-primary bg-sidebar-accent text-sidebar-primary font-semibold rounded-r-md'
+                    : 'pl-3 border-l-[3px] border-transparent text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-md'
                 }`}
               >
                 <span className="text-base leading-none">{item.icon}</span>

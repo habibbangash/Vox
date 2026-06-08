@@ -60,6 +60,15 @@ export default async function DashboardPage() {
     buying_signal:      'Buying signal',
     competitor_mention: 'Competitor',
   }
+  const SIGNAL_TYPE_CHIP: Record<string, string> = {
+    recurring_topic:    'bg-primary/10 text-primary',
+    buying_signal:      'bg-accent/15 text-accent',
+    objection_trend:    'bg-red-100 text-red-700',
+    competitor_mention: 'bg-slate-100 text-slate-600',
+  }
+  const SIGNAL_BORDER: Record<string, string> = {
+    buying_signal: 'border-l-[3px] border-l-accent',
+  }
   const FORMAT_LABEL: Record<string, string> = {
     linkedin_post:   'LinkedIn',
     email_sequence:  'Cold email',
@@ -92,7 +101,7 @@ export default async function DashboardPage() {
     <div className="p-4 sm:p-8 max-w-4xl space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="text-2xl font-semibold tracking-tight font-heading">
           {workspace?.name ?? 'Dashboard'}
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">{user.email}</p>
@@ -185,10 +194,10 @@ export default async function DashboardPage() {
               {(recentSignals ?? []).map((s) => {
                 const sig = s as { id: string; title: string; signal_type: string; document_count: number; source_count: number }
                 return (
-                <div key={sig.id} className="rounded-lg border bg-card px-3 py-2.5 space-y-0.5">
+                <div key={sig.id} className={`rounded-lg border bg-card px-3 py-2.5 space-y-0.5 ${SIGNAL_BORDER[sig.signal_type] ?? ''}`}>
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-sm font-medium leading-snug">{sig.title}</p>
-                    <span className="text-xs text-muted-foreground shrink-0 bg-muted rounded-full px-2 py-0.5">
+                    <span className={`text-xs shrink-0 rounded-full px-2 py-0.5 ${SIGNAL_TYPE_CHIP[sig.signal_type] ?? 'bg-muted text-muted-foreground'}`}>
                       {SIGNAL_TYPE_LABEL[sig.signal_type] ?? sig.signal_type}
                     </span>
                   </div>

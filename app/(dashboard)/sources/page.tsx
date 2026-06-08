@@ -119,7 +119,7 @@ export default async function SourcesPage({
   return (
     <div className="p-4 sm:p-8 max-w-4xl">
       <div className="flex items-center justify-between mb-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Sources</h1>
+        <h1 className="text-2xl font-semibold tracking-tight font-heading">Sources</h1>
         <SetupWizard justConnected={justConnected} connectedSources={connectedSources} />
       </div>
       <p className="text-muted-foreground text-sm mb-6">

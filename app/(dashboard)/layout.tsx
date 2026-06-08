@@ -25,29 +25,29 @@ export default async function DashboardLayout({
       <MobileHeader workspaceName={workspace?.name ?? '—'} />
 
       {/* Sidebar — hidden on mobile */}
-      <aside className="hidden sm:flex w-56 shrink-0 flex-col border-r bg-card">
+      <aside className="hidden sm:flex w-56 shrink-0 flex-col bg-sidebar border-r border-sidebar-border">
         {/* Logo */}
-        <div className="px-4 py-5 border-b">
-          <span className="text-xl font-bold tracking-tight">Vox</span>
+        <div className="px-4 py-5 border-b border-sidebar-border">
+          <span className="text-xl font-bold tracking-tight text-sidebar-foreground font-heading">Vox</span>
         </div>
 
         {/* Workspace */}
-        <div className="px-4 py-3 border-b">
-          <p className="text-xs text-muted-foreground">Workspace</p>
-          <p className="text-sm font-medium truncate">{workspace?.name ?? '—'}</p>
+        <div className="px-4 py-3 border-b border-sidebar-border">
+          <p className="text-xs text-sidebar-foreground/60">Workspace</p>
+          <p className="text-sm font-medium truncate text-sidebar-foreground">{workspace?.name ?? '—'}</p>
         </div>
 
         {/* Navigation */}
         <NavLinks />
 
         {/* Logout */}
-        <div className="px-2 py-3 border-t">
+        <div className="px-2 py-3 border-t border-sidebar-border">
           <form action={logout}>
             <Button
               type="submit"
               variant="ghost"
               size="sm"
-              className="w-full justify-start text-muted-foreground"
+              className="w-full justify-start text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
             >
               Sign out
             </Button>

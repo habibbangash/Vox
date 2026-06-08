@@ -13,7 +13,7 @@ const SOURCE_LABELS: Record<string, string> = {
 }
 const SOURCE_COLORS: Record<string, string> = {
   krisp:   'bg-violet-500',
-  rss:     'bg-blue-500',
+  rss:     'bg-[#1A3D2B]',
   slack:   'bg-green-500',
   gmail:   'bg-red-500',
   hubspot: 'bg-orange-500',
@@ -28,9 +28,9 @@ const SIGNAL_LABELS: Record<string, string> = {
   competitor_mention: 'Competitor Mentions',
 }
 const SIGNAL_COLORS: Record<string, string> = {
-  recurring_topic:    'bg-blue-500',
+  recurring_topic:    'bg-[#1A3D2B]',
   objection_trend:    'bg-amber-500',
-  buying_signal:      'bg-green-500',
+  buying_signal:      'bg-[#D97706]',
   competitor_mention: 'bg-red-500',
 }
 
@@ -42,7 +42,7 @@ const STATUS_LABELS: Record<string, string> = {
 }
 const STATUS_COLORS: Record<string, string> = {
   brief:     'bg-slate-400',
-  draft:     'bg-blue-500',
+  draft:     'bg-[#1A3D2B]',
   review:    'bg-amber-500',
   published: 'bg-green-500',
 }
@@ -119,7 +119,7 @@ export default async function AnalyticsPage() {
   return (
     <div className="p-4 sm:p-8 max-w-3xl space-y-10">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight mb-1">Analytics</h1>
+        <h1 className="text-2xl font-semibold tracking-tight mb-1 font-heading">Analytics</h1>
         <p className="text-muted-foreground text-sm">
           Pipeline health and content output for your workspace.
         </p>

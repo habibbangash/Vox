@@ -22,10 +22,10 @@ export function NavLinks() {
           <Link
             key={item.href}
             href={item.href}
-            className={`flex items-center gap-2.5 px-2 py-1.5 rounded-md text-sm transition-colors ${
+            className={`flex items-center gap-2.5 py-1.5 text-sm transition-colors ${
               active
-                ? 'bg-muted text-foreground font-medium'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                ? 'pl-[9px] border-l-[3px] border-sidebar-primary bg-sidebar-accent text-sidebar-primary font-semibold rounded-r-md'
+                : 'pl-3 border-l-[3px] border-transparent text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent rounded-md'
             }`}
           >
             <span className="text-base leading-none">{item.icon}</span>

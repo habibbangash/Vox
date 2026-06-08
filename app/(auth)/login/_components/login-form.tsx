@@ -18,7 +18,7 @@ export function LoginForm({ next }: LoginFormProps) {
   return (
     <Card className="w-full max-w-sm">
       <CardHeader className="space-y-1">
-        <div className="text-2xl font-bold tracking-tight mb-1">Vox</div>
+        <div className="text-2xl font-bold tracking-tight mb-1 font-heading text-primary">Vox</div>
         <CardTitle className="text-xl">Welcome back</CardTitle>
         <CardDescription>Sign in to your workspace</CardDescription>
       </CardHeader>
