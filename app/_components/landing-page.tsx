@@ -13,13 +13,13 @@ const EASE    = 'cubic-bezier(0.32,0.72,0,1)'
 const NAV_LINKS = ['Features', 'How it works', 'Pricing'] as const
 
 const INTEGRATIONS = [
-  { name: 'Krisp',    domain: 'krisp.ai'     },
-  { name: 'Slack',    domain: 'slack.com'    },
-  { name: 'Gmail',    domain: 'gmail.com'    },
-  { name: 'HubSpot',  domain: 'hubspot.com'  },
-  { name: 'Notion',   domain: 'notion.so'    },
-  { name: 'LinkedIn', domain: 'linkedin.com' },
-  { name: 'Granola',  domain: 'granola.so'   },
+  { name: 'Krisp',    logo: '/logos/krisp.png'    },
+  { name: 'Slack',    logo: '/logos/slack.png'    },
+  { name: 'Gmail',    logo: '/logos/gmail.png'    },
+  { name: 'HubSpot',  logo: '/logos/hubspot.png'  },
+  { name: 'Notion',   logo: '/logos/notion.png'   },
+  { name: 'LinkedIn', logo: '/logos/linkedin.png' },
+  { name: 'Granola',  logo: '/logos/granola.png'  },
 ] as const
 
 const FLOAT_ANIMS  = ['vox-float-a', 'vox-float-b', 'vox-float-c', 'vox-float-d'] as const
@@ -545,18 +545,13 @@ export function LandingPage() {
               Connects to
             </span>
             <div className="flex flex-wrap items-center justify-center gap-x-9 gap-y-5 px-6">
-              {INTEGRATIONS.map(({ name, domain }) => (
+              {INTEGRATIONS.map(({ name, logo }) => (
                 <div key={name} className="flex flex-col items-center gap-2">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={`https://logo.clearbit.com/${domain}`}
+                    src={logo}
                     alt={name} width={36} height={36}
                     className="rounded-xl"
-                    onError={e => {
-                      const img = e.target as HTMLImageElement
-                      img.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
-                      img.onerror = () => { img.style.display = 'none' }
-                    }}
                   />
                   <span className="text-[10px] tracking-[0.12em] uppercase font-medium" style={{ color: 'rgba(0,0,0,0.35)' }}>
                     {name}
