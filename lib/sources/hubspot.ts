@@ -180,6 +180,36 @@ export async function fetchAllCalls(
   })
 }
 
+// ─── Single-object fetchers (used by webhook handler) ────────────────────────
+
+export async function fetchNoteById(
+  accessToken: string,
+  noteId: string
+): Promise<HubSpotObject | null> {
+  const props = ['hs_note_body', 'hs_timestamp', 'hubspot_owner_id']
+  const res = await fetch(
+    `https://api.hubapi.com/crm/v3/objects/notes/${noteId}?properties=${props.join(',')}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  )
+  if (!res.ok) return null
+  const data = await res.json()
+  return data as HubSpotObject
+}
+
+export async function fetchCallById(
+  accessToken: string,
+  callId: string
+): Promise<HubSpotObject | null> {
+  const props = ['hs_call_title', 'hs_call_body', 'hs_call_duration', 'hs_timestamp', 'hs_call_status']
+  const res = await fetch(
+    `https://api.hubapi.com/crm/v3/objects/calls/${callId}?properties=${props.join(',')}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  )
+  if (!res.ok) return null
+  const data = await res.json()
+  return data as HubSpotObject
+}
+
 // ─── Document builders ────────────────────────────────────────────────────────
 
 export function contactToDocument(

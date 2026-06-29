@@ -8,8 +8,8 @@ import { fetchChannelMessages, fetchUserName, slackTsToDate } from '@/lib/source
 import { fetchThreads, refreshGoogleToken } from '@/lib/sources/gmail'
 import {
   refreshHubSpotToken,
-  fetchAllContacts, fetchAllDeals, fetchAllNotes, fetchAllCalls,
-  contactToDocument, dealToDocument, noteToDocument, callToDocument,
+  fetchAllDeals, fetchAllNotes, fetchAllCalls,
+  dealToDocument, noteToDocument, callToDocument,
 } from '@/lib/sources/hubspot'
 import {
   refreshGranolaToken,
@@ -439,16 +439,20 @@ export async function syncHubSpot(connectionId: string): Promise<SourceActionSta
     .eq('id', connectionId)
 
   try {
-    const [contacts, deals, notes, calls] = await Promise.all([
-      fetchAllContacts(accessToken),
+    const [deals, notes, calls] = await Promise.all([
       fetchAllDeals(accessToken),
       fetchAllNotes(accessToken),
       fetchAllCalls(accessToken),
     ])
 
+    // Only ingest deals that have a meaningful description — structured fields
+    // (stage, amount) alone have no signal value for the content engine.
+    const dealsWithContent = deals.filter(
+      (d) => (d.properties['description'] ?? '').trim().length > 50
+    )
+
     const docs = [
-      ...contacts.map((c) => contactToDocument(c, connection.workspace_id, connectionId)),
-      ...deals.map((d) => dealToDocument(d, connection.workspace_id, connectionId)),
+      ...dealsWithContent.map((d) => dealToDocument(d, connection.workspace_id, connectionId)),
       ...notes.map((n) => noteToDocument(n, connection.workspace_id, connectionId)),
       ...calls.map((c) => callToDocument(c, connection.workspace_id, connectionId)),
     ]
